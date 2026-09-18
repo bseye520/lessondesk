@@ -46,6 +46,11 @@
 - 单学员批量补扣（`/students/lessons-batch`）
 - 每个班级一份「点名记录」，可回溯到具体某天某节课
 
+### PWA（可安装 / 离线可用）
+- `manifest.webmanifest` + Service Worker，支持 iOS「添加到主屏幕」与 Android 安装
+- 独立窗口运行，离线有提示页（不白屏），网络恢复自动继续
+- 只缓存静态资源，业务数据一律不落缓存（详见下面「装到手机上」一节）
+
 ### 报名入口（家长填表，**无需注册**）
 - 管理员创建「报名批次」→ 生成一个随机 token 链接 `/r/<token>`
 - 家长扫码/点链接打开表单填孩子信息，**不需要注册账号**
@@ -65,6 +70,40 @@
 - 操作审计日志（`instance/security.log` + stdout，记录登录/越权/CSRF/限流/改数据）
 - 公网强制 HTTPS（带 `CF-Connecting-IP` 的请求若走 http → 301 + HSTS；局域网直连不受影响）
 - `/healthz` 健康检查，Dockerfile 自带 HEALTHCHECK
+
+---
+
+## 装到手机上（PWA）
+
+内置 PWA 支持，可以**直接装成 App**，不用上架任何应用商店。
+
+| 平台 | 怎么装 |
+|---|---|
+| **iPhone / iPad** | Safari 打开站点 → 分享 → **添加到主屏幕** |
+| **Android** | Chrome 打开站点 → 右上角菜单 → **安装应用 / 添加到主屏幕** |
+
+装好之后：
+
+- **全屏独立窗口运行**（`display: standalone`），有自己的图标、启动画面，看不到浏览器地址栏
+- **断网不会白屏** —— 显示一个友好的离线提示页，网络一恢复自动刷新
+- 样式/字体/图标走本地缓存，打开更快
+
+### 缓存边界（重要）
+
+Service Worker **只缓存 `/static/` 下的静态资源**。
+登录态、学员课时、报名数据、后台页面**一律不缓存**：
+
+- 页面导航一律 **network-first**，永远拿最新数据，断网时只回退到离线提示页
+- 带 `Set-Cookie` / `no-store` 的响应一律不存
+- 非 GET、跨域、带 `Range` 的请求直接放行
+
+宁可告诉你「没网」，也**不会给你看一份过期的课时数据**。
+
+### 注意
+
+- PWA 要求**安全上下文**：必须走 **https**（或本机 `localhost`）。局域网 `http://<你的NAS>:28001` 直连不会注册 Service Worker，这是浏览器的硬限制，不是 bug
+- iOS 独立窗口的 Cookie 与 Safari 分开，装到桌面后需要**登录一次**
+- 推送通知（Web Push）暂未开启，但 service worker 里已预留 `push` / `notificationclick` 结构
 
 ---
 
@@ -171,7 +210,11 @@ cloudflared tunnel --url http://127.0.0.1:28001
 │   ├── audit.py         # 审计日志
 │   ├── utils.py         # 时间/金额/token 工具
 │   ├── templates/       # Jinja2 模板
-│   └── static/          # CSS / 本地 vendor / 上传目录
+│   └── static/
+│       ├── sw.js                 # Service Worker（缓存策略都在这，看注释）
+│       ├── manifest.webmanifest  # PWA 清单（名称/图标/standalone）
+│       ├── offline.html          # 断网时的友好提示页
+│       └── icons/                # PWA 图标（any + maskable + apple-touch）
 ├── scripts/
 │   ├── smoke.py         # 全链路冒烟测试（HTTP 层）
 │   └── run_test.sh      # 起测试实例 + 跑冒烟
@@ -209,7 +252,8 @@ cloudflared tunnel --url http://127.0.0.1:28001
 - **没有在线支付**（故意的）：交费金额只作台账备注，实际收款走线下/第三方
 - **没有短信/微信通知**：报名结果靠管理员线下通知
 - **单写者**：SQLite 决定了并发写入能力有限。gunicorn 固定 1 worker + 8 threads，够一个机构几十人日常用，不适合大流量
-- 前端是服务端渲染，没做 SPA / PWA
+- **PWA 需要 https**：局域网 http 直连不会注册 Service Worker（浏览器限制），要用 PWA 必须走 https 域名
+- 前端是服务端渲染，没做 SPA（**PWA 已支持**，见上文「装到手机上」）
 
 ---
 
