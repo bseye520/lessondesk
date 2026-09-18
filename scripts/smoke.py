@@ -154,7 +154,7 @@ def main():
     check('消课提交', st == 302, f'st={st}')
     st, h = req('/students/3')
     check('小刚 20→19', '19' in h, 'h=%s' % h[h.find('剩余'):h.find('剩余') + 60])
-    # 消课记录页可见（撤销改为「管理员在学员详情调整课时」，见第 9 节）
+    # 消课记录页可见（撤销已改为「管理员在学员详情调整课时」，见第 9 节）
     st, h = req('/lessons')
     check('消课记录页有记录', st == 200 and '小刚' in h, 'st=%s' % st)
 
