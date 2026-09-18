@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}查询 / 修改报名 - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:640px">
+  <div class="text-center py-4">
+    <h4 class="fw-bold">查询 / 修改报名</h4>
+    <div class="text-secondary" style="font-size:13px">{{ entry.name }} · 凭姓名与手机尾号查询</div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'danger' if cat=='danger' else 'warning' if cat=='warning' else 'success' if cat=='success' else 'info' }}" style="font-size:14px">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card-ld mb-3"><div class="card-b">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="query">
+      <div class="row g-2">
+        <div class="col-7"><label class="form-label">学生姓名</label><input class="form-control" name="name" required value="{{ found.student_name if found else '' }}"></div>
+        <div class="col-5"><label class="form-label">手机尾号 4 位</label><input class="form-control" name="phone_last4" required maxlength="4" inputmode="numeric" pattern="\d{4}" value="{{ found.phone_last4 if found else '' }}"></div>
+      </div>
+      <button class="btn btn-primary w-100 mt-3">查 询</button>
+    </form>
+  </div></div>
+
+  {% if found %}
+  <div class="card-ld mb-3"><div class="card-b">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="fw-bold fs-5">{{ found.student_name }}</div>
+      <span class="st-badge {{ 'active' if found.status=='confirmed' else 'trial' if found.status=='pending' else 'archived' }}">{{ {'pending':'待确认','confirmed':'已确认','cancelled':'已取消'}.get(found.status) }}</span>
+    </div>
+    <div class="text-secondary mt-1" style="font-size:13.5px">
+      当前班级：{{ found.class_group.name if found.class_group else '-' }}（{{ found.class_group.weekday if found.class_group else '' }} {{ found.class_group.start_time if found.class_group else '' }}-{{ found.class_group.end_time if found.class_group else '' }}）
+      · 已修改 {{ found.modify_uses }}/3 次
+    </div>
+    {% if found.status == 'pending' and found.modify_uses < 3 %}
+    <hr>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="change">
+      <input type="hidden" name="reg_id" value="{{ found.id }}">
+      <input type="hidden" name="name" value="{{ found.student_name }}">
+      <input type="hidden" name="phone_last4" value="{{ found.phone_last4 }}">
+      <label class="form-label">6 位修改码</label>
+      <input class="form-control mb-2" name="code" required maxlength="6" inputmode="numeric" pattern="\d{6}" placeholder="报名成功页显示的修改码">
+      <label class="form-label">换到班级</label>
+      <select class="form-select mb-2" name="class_group_id" required>
+        {% for it in items %}
+        <option value="{{ it.id }}" {{ 'disabled' if it.full }}>{{ it.name }}（{{ it.weekday }} {{ it.start_time }}-{{ it.end_time }}）{{ '已满' if it.full else '余'+it.slots_text+'席' }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-warning w-100">确认更换班级</button>
+    </form>
+    {% elif found.status == 'pending' and found.modify_uses >= 3 %}
+    <div class="alert alert-warning mt-2 mb-0 py-2" style="font-size:13px">修改次数已用完，如需调整请联系老师。</div>
+    {% elif found.status == 'confirmed' %}
+    <div class="alert alert-light border mt-2 mb-0 py-2" style="font-size:13px">已确认入班，如需变更请直接联系老师。</div>
+    {% endif %}
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}

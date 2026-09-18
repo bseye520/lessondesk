@@ -1,0 +1,16 @@
+services:
+  lessondesk:
+    build: .
+    image: lessondesk:latest
+    container_name: lessondesk
+    restart: unless-stopped
+    ports:
+      # 左边是宿主机端口，可用 PORT=8080 docker compose up -d 覆盖
+      - "${PORT:-28001}:5000"
+    volumes:
+      - ./data/instance:/app/instance          # SQLite 数据库
+      - ./data/uploads:/app/app/static/uploads # 机构 logo / 二维码 / 背景图
+    env_file:
+      - .env
+    environment:
+      - TZ=${TZ:-Asia/Shanghai}

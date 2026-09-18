@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }} - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container-ld d-flex justify-content-center" style="padding-top:10vh">
+  <div class="card-ld text-center" style="max-width:520px">
+    <div class="card-b p-5">
+      <i class="bi {{ 'bi-emoji-frown' if code==404 else 'bi-shield-exclamation' if code==403 else 'bi-tools' }} display-3 d-block mb-3" style="color:var(--ld-muted)"></i>
+      <h4 class="fw-bold">{{ code }}</h4>
+      <p class="text-secondary mt-2 mb-2" style="font-size:14px">{{ message }}</p>
+      {% if reason %}
+      <div class="text-start small text-secondary mb-3 p-3"
+           style="background:var(--bs-tertiary-bg,#f6f7f9);border-radius:10px;line-height:1.6">
+        <span class="fw-semibold">原因：</span>{{ reason }}
+      </div>
+      {% endif %}
+      <a class="btn btn-primary px-4" href="{{ home or url_for('index') }}">回到我的首页</a>
+      {% if me %}
+      <p class="text-secondary mt-3 mb-0" style="font-size:12px">
+        当前账号：{{ me.username }}（{{ me.role_name }}）
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

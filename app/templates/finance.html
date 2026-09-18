@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}财务 - {{ site_name }}{% endblock %}
+{% block mtitle %}财务{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">财务</div>
+      <div class="page-sub mb-0">交费与支出记录（金额仅备注，不参与计算）</div>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mExpense"><i class="bi bi-plus-lg"></i> 记支出</button>
+  </div>
+
+  <div class="stat-grid mt-3">
+    <div class="stat-card green"><i class="bi bi-lightning-charge ic"></i><div class="n">{{ total_charge_lessons }}</div><div class="l">累计售出课时</div></div>
+    <div class="stat-card purple"><i class="bi bi-gift ic"></i><div class="n">{{ total_bonus }}</div><div class="l">累计赠课</div></div>
+    <div class="stat-card red"><i class="bi bi-receipt ic"></i><div class="n">{{ expense_count }}</div><div class="l">支出笔数</div></div>
+    <div class="stat-card blue"><i class="bi bi-people ic"></i><div class="n">{{ campuses|length }}</div><div class="l">校区</div></div>
+  </div>
+
+  <div class="card-ld mt-3"><div class="card-h"><span>流水记录</span></div>
+    <div class="card-b flush">
+    {% if rows %}
+    <div class="table-responsive"><table class="ld-table">
+      <thead><tr><th>时间</th><th>类型</th><th>对象</th><th>课时</th><th>赠课</th><th>金额(备注)</th><th>备注</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr>
+          <td style="white-space:nowrap">{{ r.date.strftime('%m-%d %H:%M') }}</td>
+          <td><span class="st-badge {{ 'active' if r.kind=='交费' else 'archived' if r.kind=='支出' else 'trial' }}">{{ r.kind }}</span></td>
+          <td>{{ r.who }}</td>
+          <td class="text-end">{{ ('+' if r.lessons>0 else '') if r.lessons else '-' }}{{ r.lessons if r.lessons else '-' }}</td>
+          <td class="text-end">{{ r.bonus if r.bonus else '-' }}</td>
+          <td class="text-end {{ 'text-success' if r.amount_cents>0 else 'text-danger' if r.amount_cents<0 }}">{{ '¥' + (r.amount_cents|money) if r.amount_cents else '-' }}</td>
+          <td class="text-secondary" style="font-size:12.5px;max-width:220px">{{ r.remarks }}{% if r.operator %} <span class="text-secondary">({{ r.operator }})</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<div class="empty"><i class="bi bi-receipt"></i>暂无记录</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="mExpense"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">记一笔支出</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('finance.expense') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      {% if super %}
+      <div class="mb-2"><label class="form-label">校区</label><select class="form-select" name="campus_id" required>{% for c in campuses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+      {% endif %}
+      <div class="mb-2"><label class="form-label">类别</label><select class="form-select" name="category">
+        {% for c in ['房租','工资','耗材','市场','其他'] %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select></div>
+      <div class="mb-2"><label class="form-label">金额（元）*</label><input class="form-control" type="number" min="0.01" step="0.01" name="amount" required></div>
+      <div><label class="form-label">说明 *</label><textarea class="form-control" name="remarks" rows="2" required placeholder="这笔钱花在哪了"></textarea></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">保存</button></div>
+  </form>
+</div></div></div>
+{% endblock %}

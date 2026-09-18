@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}{{ site_name }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap-icons.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260908">
+</head>
+<body>
+
+{% set role = me.role if me else '' %}
+{% set super = role == 'super_admin' %}
+{% set mgr = role == 'manager' %}
+{% set tea = role == 'teacher' %}
+
+{# 全菜单（桌面侧栏 & 手机抽屉共用） #}
+{% set menus = [] %}
+{% if super %}
+  {% set _ = menus.append(('admin_home', 'bi-grid', '总览', url_for('admin.home'), true)) %}
+  {% set _ = menus.append(('admin_users', 'bi-people', '账号管理', url_for('admin.users'), true)) %}
+  {% set _ = menus.append(('admin_courses', 'bi-palette', '课程管理', url_for('admin.courses'), true)) %}
+  {% set _ = menus.append(('classes_list_cg', 'bi-calendar3', '班次管理', url_for('classes.list_cg'), true)) %}
+  {% set _ = menus.append(('students_list_students', 'bi-person-video3', '学员管理', url_for('students.list_students'), true)) %}
+  {% set _ = menus.append(('students_batch_lessons', 'bi-clock-history', '课时管理', url_for('students.batch_lessons'), true)) %}
+  {% set _ = menus.append(('register_manage', 'bi-clipboard-check', '报名管理', url_for('register.manage'), true)) %}
+  {% set _ = menus.append(('register_entries', 'bi-box-arrow-in-right', '报名入口', url_for('register.entries'), true)) %}
+  {% set _ = menus.append(('finance_dashboard', 'bi-wallet2', '财务', url_for('finance.dashboard'), true)) %}
+  {% set _ = menus.append(('lessons_records', 'bi-list-check', '消课记录', url_for('lessons.records'), true)) %}
+  {% set _ = menus.append(('admin_system', 'bi-gear', '系统设置', url_for('admin.system'), false)) %}
+{% elif mgr %}
+  {% set _ = menus.append(('students_dashboard', 'bi-grid', '概览', url_for('students.dashboard'), true)) %}
+  {% set _ = menus.append(('classes_list_cg', 'bi-calendar3', '班次管理', url_for('classes.list_cg'), true)) %}
+  {% set _ = menus.append(('students_list_students', 'bi-person-video3', '学员管理', url_for('students.list_students'), true)) %}
+  {% set _ = menus.append(('students_batch_lessons', 'bi-clock-history', '课时管理', url_for('students.batch_lessons'), true)) %}
+  {% set _ = menus.append(('register_manage', 'bi-clipboard-check', '报名管理', url_for('register.manage'), true)) %}
+  {% set _ = menus.append(('finance_dashboard', 'bi-wallet2', '财务', url_for('finance.dashboard'), true)) %}
+  {% set _ = menus.append(('lessons_records', 'bi-list-check', '消课记录', url_for('lessons.records'), true)) %}
+  {% set _ = menus.append(('admin_courses', 'bi-palette', '课程管理', url_for('admin.courses'), true)) %}
+  {% set _ = menus.append(('admin_team', 'bi-person-badge', '教师账号', url_for('admin.team'), true)) %}
+  {% set _ = menus.append(('register_entries', 'bi-box-arrow-in-right', '报名入口', url_for('register.entries'), false)) %}
+{% elif tea %}
+  {% set _ = menus.append(('lessons_my_home', 'bi-grid', '我的课', url_for('lessons.my_home'), true)) %}
+  {% set _ = menus.append(('lessons_records', 'bi-list-check', '消课记录', url_for('lessons.records'), true)) %}
+  {% set _ = menus.append(('students_list_students', 'bi-person-video3', '学员', url_for('students.list_students'), true)) %}
+{% endif %}
+{% set _ = menus.append(('auth_profile', 'bi-person', '个人中心', url_for('auth.profile'), false)) %}
+
+{% set ep = request.endpoint or '' %}
+{% macro menu_item(m) %}
+<a href="{{ m[3] }}" class="{{ 'active' if ep == m[0] else '' }}"><i class="bi {{ m[1] }}"></i><span>{{ m[2] }}</span></a>
+{% endmacro %}
+
+{# ============ 手机顶栏 ============ #}
+{% if me %}
+<div class="ld-topbar">
+  <button class="btn btn-light btn-sm border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuDrawer"><i class="bi bi-list fs-4"></i></button>
+  <div class="t-title">{% block mtitle %}{{ site_name }}{% endblock %}</div>
+  <a href="{{ url_for('auth.profile') }}" class="text-dark"><i class="bi bi-person-circle fs-4"></i></a>
+</div>
+{% endif %}
+
+{# ============ 桌面侧栏 ============ #}
+{% if me %}
+<aside class="ld-sidebar">
+  <div class="ld-brand">
+    {% if site_logo %}<img src="{{ site_logo }}" style="width:34px;height:34px;border-radius:10px;object-fit:cover">{% else %}<i class="bi bi-mortarboard-fill"></i>{% endif %}
+    <div>{{ site_name }}<small>教务管理系统</small></div>
+  </div>
+  <nav class="ld-menu">
+    {% for m in menus %}{{ menu_item(m) }}{% endfor %}
+  </nav>
+  <div class="ld-foot">
+    <div class="ld-user"><span class="avatar-dot" style="width:28px;height:28px;font-size:12px;">{{ me.username[0]|upper }}</span>
+      <div style="line-height:1.2">{{ me.username }}<br><small>{{ me.role_name }}{% if me.campus %} · {{ me.campus.name }}{% endif %}</small></div>
+    </div>
+    <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i>退出登录</a>
+  </div>
+</aside>
+{% endif %}
+
+{# ============ 手机底部导航（前 5 项） ============ #}
+{% if me and menus|length > 1 %}
+<nav class="ld-mobile-nav d-lg-none">
+  {% for m in menus[:5] %}
+  <a href="{{ m[3] }}" class="{{ 'active' if ep == m[0] else '' }}"><i class="bi {{ m[1] }}"></i>{{ m[2] }}</a>
+  {% endfor %}
+  {% if menus|length > 5 %}
+  <a href="#" data-bs-toggle="offcanvas" data-bs-target="#menuDrawer"><i class="bi bi-three-dots"></i>更多</a>
+  {% endif %}
+</nav>
+{% endif %}
+
+{# ============ 手机抽屉（图标宫格） ============ #}
+{% if me %}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="menuDrawer" style="width:300px">
+  <div class="offcanvas-header border-bottom d-flex align-items-center gap-2">
+    {% if site_logo %}<img src="{{ site_logo }}" style="width:26px;height:26px;border-radius:8px;object-fit:cover">{% else %}<i class="bi bi-mortarboard-fill fs-5" style="color:var(--ld-primary)"></i>{% endif %}
+    <h6 class="mb-0 flex-grow-1">{{ site_name }}</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body p-0 d-flex flex-column">
+    <div class="p-3 border-bottom d-flex align-items-center gap-2" style="background:#f7f8fc">
+      <span class="avatar-dot" style="width:40px;height:40px">{{ me.username[0]|upper }}</span>
+      <div>
+        <div class="fw-semibold">{{ me.username }}</div>
+        <div class="text-secondary" style="font-size:12px">{{ me.role_name }}{% if me.campus %} · {{ me.campus.name }}{% endif %}</div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-danger ms-auto"><i class="bi bi-box-arrow-right"></i> 退出</a>
+    </div>
+    <div class="p-3 overflow-auto">
+      <div class="drawer-grid">
+      {% for m in menus %}
+        <a href="{{ m[3] }}" class="drawer-item {{ 'active' if ep == m[0] }}" data-bs-dismiss="offcanvas" onclick="var h=this.getAttribute('href'); if(h && h.charAt(0)!=='#'){ setTimeout(function(){ window.location.href=h; }, 200); }">
+          <span class="di-ic"><i class="bi {{ m[1] }}"></i></span>
+          <span>{{ m[2] }}</span>
+        </a>
+      {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ============ 内容 ============ #}
+<main class="ld-main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="ld-flash">
+      {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'danger' if cat=='danger' else 'warning' if cat=='warning' else 'success' if cat=='success' else 'info' }} alert-dismissible fade show" role="alert">
+        {{ msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    </div>
+    <script>setTimeout(()=>{document.querySelectorAll('.ld-flash .alert').forEach(a=>{a.classList.remove('show');setTimeout(()=>a.remove(),300)})},4000)</script>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='vendor/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+/* 全局危险操作二次确认：替代原生 confirm()（iPad Safari/微信内 confirm 易误点或不可靠） */
+(function(){
+  var timers = {};
+  document.addEventListener('submit', function(e){
+    var f = e.target;
+    if (!f || f.tagName !== 'FORM') return;
+    var msg = f.getAttribute('data-confirm');
+    if (!msg) return;
+    var btn = f.querySelector('button[type="submit"], button:not([type])');
+    if (!btn) return;
+    if (f.getAttribute('data-armed') === '1') return; /* 已二次确认，放行提交 */
+    e.preventDefault();
+    f.setAttribute('data-armed', '1');
+    var oldHTML = btn.innerHTML, oldCls = btn.className;
+    btn.innerHTML = '⚠️ ' + msg + '（再点一次确认）';
+    btn.classList.add('btn-danger');
+    clearTimeout(timers[f]);
+    timers[f] = setTimeout(function(){
+      f.removeAttribute('data-armed');
+      btn.innerHTML = oldHTML;
+      btn.className = oldCls;
+    }, 4000);
+  });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

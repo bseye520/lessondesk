@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}消课记录 - {{ site_name }}{% endblock %}
+{% block mtitle %}消课记录{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="page-title">消课记录</div>
+  <div class="page-sub">{{ '我的消课记录（扣错请找校区管理员调整课时）' if tea else '全部消课记录（扣错由管理员在学员详情调整课时）' }}</div>
+
+  <form class="d-flex gap-2 flex-wrap" method="get">
+    <select class="form-select form-select-sm" style="width:auto" name="class_group_id" onchange="this.form.submit()">
+      <option value="">全部班次</option>{% for g in groups %}<option value="{{ g.id }}" {{ 'selected' if cg_id==g.id }}>{{ g.name }}</option>{% endfor %}
+    </select>
+    <input class="form-control form-control-sm" style="width:auto" type="date" name="date" value="{{ request.args.get('date','') }}" onchange="this.form.submit()">
+  </form>
+
+  <div class="card-ld mt-3"><div class="card-b flush">
+    {% if records %}
+    <div class="table-responsive"><table class="ld-table">
+      <thead><tr><th>时间</th><th>班次</th><th>学员</th><th>教师</th><th>状态</th><th>扣课时</th></tr></thead>
+      <tbody>
+      {% for r in records %}
+        <tr class="{{ 'opacity-50' if r.revoked_at }}">
+          <td style="white-space:nowrap">{{ r.date.strftime('%m-%d %H:%M') }}</td>
+          <td>{{ r.class_group.name }}</td>
+          <td>{{ r.student.name }}</td>
+          <td>{{ r.teacher.username }}</td>
+          <td>{{ STATUS_CN.get(r.status, r.status) }}{% if r.revoked_at %}<span class="st-badge archived ms-1">已撤销</span>{% endif %}</td>
+          <td>{{ r.deducted_lessons }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<div class="empty"><i class="bi bi-inbox"></i>暂无记录</div>{% endif %}
+  </div></div>
+</div>
+{% endblock %}

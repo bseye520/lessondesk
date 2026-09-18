@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}系统设置 - {{ site_name }}{% endblock %}
+{% block mtitle %}系统设置{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:640px">
+  <div class="page-title">系统设置</div>
+  <div class="page-sub">站点名称 · 品牌 Logo · 登录封面</div>
+
+  <div class="card-ld mb-3"><div class="card-b">
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label">系统名称</label>
+        <input class="form-control" name="site_name" value="{{ cfg.site_name if cfg else '课时本' }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">品牌 Logo（PNG/SVG，显示在登录卡与侧边栏）</label>
+        <div class="d-flex align-items-center gap-3">
+          <div class="avatar-dot" style="width:64px;height:64px;border-radius:16px;font-size:26px;overflow:hidden">
+            {% if cfg and cfg.logo_path %}<img src="{{ cfg.logo_path }}" style="width:100%;height:100%;object-fit:cover">{% else %}<i class="bi bi-mortarboard-fill"></i>{% endif %}
+          </div>
+          <input class="form-control" type="file" name="logo" accept=".png,.jpg,.jpeg,.svg,.webp">
+        </div>
+        {% if cfg and cfg.logo_path %}<div class="mt-2"><label class="form-check-label"><input class="form-check-input" type="checkbox" name="reset_logo" value="1"> 移除 Logo 恢复默认图标</label></div>{% endif %}
+      </div>
+      <div class="mb-3">
+        <label class="form-label">登录页封面图（建议 1920×1200 左右，JPG/PNG）</label>
+        {% if cfg and cfg.login_bg_path %}
+        <div class="mb-2"><img src="{{ cfg.login_bg_path }}" class="rounded" style="width:100%;max-height:150px;object-fit:cover"></div>
+        {% else %}
+        <div class="text-secondary mb-2" style="font-size:12.5px">当前使用内置水彩渐变封面</div>
+        {% endif %}
+        <input class="form-control" type="file" name="login_bg" accept=".png,.jpg,.jpeg,.webp">
+        {% if cfg and cfg.login_bg_path %}<div class="mt-2"><label class="form-check-label"><input class="form-check-input" type="checkbox" name="reset_bg" value="1"> 恢复默认封面</label></div>{% endif %}
+      </div>
+      <button class="btn btn-primary px-4">保存设置</button>
+    </form>
+  </div></div>
+
+  <div class="card-ld"><div class="card-b text-secondary" style="font-size:13px">
+    <i class="bi bi-shield-check me-1"></i>账号体系：系统管理员 → 校区管理员 → 教师（校区管理员在「教师账号」中创建教师）
+  </div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}报名已结束 - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:520px;padding-top:10vh">
+  <div class="card-ld text-center"><div class="card-b p-5">
+    <i class="bi bi-calendar-x display-3 d-block mb-3" style="color:var(--ld-muted)"></i>
+    <h4 class="fw-bold mb-2">本次报名已结束</h4>
+    <p class="text-secondary mb-1" style="font-size:14px">{{ entry.name }}</p>
+    {% if entry.contact %}<p class="text-secondary" style="font-size:14px">如需报名请联系：{{ entry.contact }}</p>{% endif %}
+  </div></div>
+</div>
+{% endblock %}

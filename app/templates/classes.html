@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}班次管理 - {{ site_name }}{% endblock %}
+{% block mtitle %}班次管理{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">班次管理</div>
+      <div class="page-sub mb-0">课程 · 时间 · 教室 · 容量 一站式管理</div>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mNew"><i class="bi bi-plus-lg"></i> 新建班次</button>
+  </div>
+
+  <div class="d-flex gap-2 mt-3 flex-wrap align-items-center">
+    <form class="d-flex gap-2 flex-wrap" method="get">
+      {% if super %}<select class="form-select form-select-sm" style="width:auto" name="campus_id" onchange="this.form.submit()">
+        <option value="">全部校区</option>{% for c in campuses %}
+        <option value="{{ c.id }}" {{ 'selected' if cid==c.id }}>{{ c.name }}</option>{% endfor %}
+      </select>{% endif %}
+      <select class="form-select form-select-sm" style="width:auto" name="course_id" onchange="this.form.submit()">
+        <option value="">全部课程</option>{% for c in courses %}
+        <option value="{{ c.id }}" {{ 'selected' if course_id==c.id }}>{{ c.name }}</option>{% endfor %}
+      </select>
+      <a class="btn btn-sm {{ 'btn-soft' if not request.args.get('archived') else 'btn-outline-secondary' }}" href="{{ url_for('classes.list_cg', archived=1 if not request.args.get('archived') else '') }}">{{ '含已归档' if not request.args.get('archived') else '只看进行中' }}</a>
+    </form>
+  </div>
+
+  <div class="row g-3 mt-1">
+    {% for g in groups %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card-ld h-100"><div class="card-b">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="fw-bold fs-5">{{ g.name }}{% if g.is_archived %} <span class="st-badge archived">已归档</span>{% endif %}</div>
+          <span class="cg-tag">{{ g.course.name if g.course else '-' }}</span>
+        </div>
+        <div class="cg-meta mt-2">
+          <span><i class="bi bi-clock"></i>{{ g.weekday }} {{ g.start_time }}-{{ g.end_time }}</span>
+          <span><i class="bi bi-door-open"></i>{{ g.room or '未设教室' }}</span>
+          <span><i class="bi bi-person"></i>{{ g.teacher.username if g.teacher else '待定教师' }}</span>
+        </div>
+        <div class="mt-1" style="font-size:12px"><span class="text-secondary">每次点名扣 <b>{{ g.deduct_lessons or 1 }}</b> 节</span></div>
+        {% set occ = g.occupied_count() %}{% set cap = g.effective_capacity() %}
+        <div class="mt-2 d-flex justify-content-between" style="font-size:12.5px">
+          <span class="text-secondary">在班 {{ occ }} 人{% if cap %} / 上限 {{ cap }}{% endif %}</span>
+          {% if cap %}<span class="fw-semibold {{ 'text-danger' if occ>=cap else 'text-success' }}">{{ '已满' if occ>=cap else '余 ' ~ (cap-occ) ~ ' 席' }}</span>{% else %}<span class="text-secondary">不限人数</span>{% endif %}
+        </div>
+        {% if cap %}<div class="cap-bar mt-1 {{ 'full' if occ>=cap else 'warn' if occ>=cap*0.8 else '' }}"><div style="width:{{ [100, occ*100//cap]|min }}%"></div></div>{% endif %}
+        <div class="cg-actions">
+          <a class="btn btn-sm btn-soft" href="{{ url_for('lessons.attendance', gid=g.id) }}"><i class="bi bi-check2-square"></i> 点名</a>
+          {% if not tea %}<button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#mEdit{{ g.id }}"><i class="bi bi-gear"></i> 设置</button>{% endif %}
+          {% if not tea %}<button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#mEnroll{{ g.id }}"><i class="bi bi-person-plus"></i> 加学员</button>{% endif %}
+          {% if super and request.args.get('archived') == '1' %}
+          <form method="post" action="{{ url_for('classes.archive_cg', gid=g.id) }}" class="ms-auto" onsubmit="return confirm('{{ '确定恢复班级「' + g.name + '」吗？' if g.is_archived else '确定归档班级「' + g.name + '」吗？归档后将从班级列表隐藏，可随时恢复。' }}')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm {{ 'btn-outline-success' if g.is_archived else 'btn-outline-secondary' }}">{{ '恢复' if g.is_archived else '归档' }}</button>
+          </form>
+          {% endif %}
+        </div>
+      </div></div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-calendar3"></i>暂无班次，点右上角「新建班次」</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+{# 新建 #}
+<div class="modal fade" id="mNew"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">新建班次</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('classes.create_cg') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      {% if super %}<div class="mb-2"><label class="form-label">校区</label><select class="form-select" name="campus_id" required>{% for c in campuses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="mb-2"><label class="form-label">班次名称 *</label><input class="form-control" name="name" required placeholder="如：素描二班（周六）"></div>
+      <div class="row g-2">
+        <div class="col-6"><label class="form-label">课程 *</label><select class="form-select" name="course_id" required>{% for c in courses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label">任课教师</label><select class="form-select" name="teacher_id"><option value="">待定</option>{% for t in teachers %}<option value="{{ t.id }}">{{ t.username }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="row g-2 mt-0">
+        <div class="col-4"><label class="form-label">星期</label><select class="form-select" name="weekday">{% for w in WEEKDAYS %}<option value="{{ w }}">{{ w }}</option>{% endfor %}</select></div>
+        <div class="col-4"><label class="form-label">开始</label><input class="form-control" type="time" name="start_time" value="09:00"></div>
+        <div class="col-4"><label class="form-label">结束</label><input class="form-control" type="time" name="end_time" value="10:30"></div>
+      </div>
+      <div class="row g-2 mt-0">
+        <div class="col-4"><label class="form-label">教室</label><input class="form-control" name="room" placeholder="如：1号教室"></div>
+        <div class="col-4"><label class="form-label">容量（0=不限）</label><input class="form-control" type="number" min="0" name="capacity" value="0"></div>
+        <div class="col-4"><label class="form-label">每次扣课数</label><input class="form-control" type="number" min="1" name="deduct_lessons" value="1" title="活动课等一次点名扣多节"><div class="text-secondary" style="font-size:11.5px">活动课可设 2/3</div></div>
+      </div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">创建</button></div>
+  </form>
+</div></div></div>
+
+{# 编辑/加人 #}
+{% for g in groups %}
+<div class="modal fade" id="mEdit{{ g.id }}"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">编辑：{{ g.name }}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('classes.update_cg', gid=g.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      <div class="mb-2"><label class="form-label">班次名称</label><input class="form-control" name="name" value="{{ g.name }}" required></div>
+      <div class="row g-2">
+        <div class="col-6"><label class="form-label">课程</label><select class="form-select" name="course_id">{% for c in courses %}<option value="{{ c.id }}" {{ 'selected' if c.id==g.course_id }}>{{ c.name }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label">教师</label><select class="form-select" name="teacher_id"><option value="">待定</option>{% for t in teachers %}<option value="{{ t.id }}" {{ 'selected' if t.id==g.teacher_id }}>{{ t.username }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="row g-2 mt-0">
+        <div class="col-4"><label class="form-label">星期</label><select class="form-select" name="weekday">{% for w in WEEKDAYS %}<option value="{{ w }}" {{ 'selected' if w==g.weekday }}>{{ w }}</option>{% endfor %}</select></div>
+        <div class="col-4"><label class="form-label">开始</label><input class="form-control" type="time" name="start_time" value="{{ g.start_time }}"></div>
+        <div class="col-4"><label class="form-label">结束</label><input class="form-control" type="time" name="end_time" value="{{ g.end_time }}"></div>
+      </div>
+      <div class="row g-2 mt-0">
+        <div class="col-4"><label class="form-label">教室</label><input class="form-control" name="room" value="{{ g.room }}"></div>
+        <div class="col-4"><label class="form-label">容量</label><input class="form-control" type="number" min="0" name="capacity" value="{{ g.capacity }}"></div>
+        <div class="col-4"><label class="form-label">每次扣课数</label><input class="form-control" type="number" min="1" name="deduct_lessons" value="{{ g.deduct_lessons or 1 }}" title="活动课等一次点名扣多节"><div class="text-secondary" style="font-size:11.5px">活动课可设 2/3</div></div>
+      </div>
+      <div class="form-check form-switch mt-2"><input class="form-check-input" type="checkbox" name="allow_override" id="ov{{ g.id }}" {{ 'checked' if g.allow_override }}><label class="form-check-label" for="ov{{ g.id }}">允许超额</label></div>
+      <div class="mt-1"><label class="form-label">超额名额</label><input class="form-control" type="number" min="0" name="override_extra" value="{{ g.override_extra }}"></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">保存</button></div>
+  </form>
+</div></div></div>
+
+<div class="modal fade" id="mEnroll{{ g.id }}"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">加学员 → {{ g.name }}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('classes.enroll_student', gid=g.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      <label class="form-label">选择学员（在册且未归档）</label>
+      <input class="form-control mb-2" type="search" placeholder="搜索姓名…" oninput="filterOpt(this,'#mEnroll{{ g.id }} select')">
+      <select class="form-select" name="student_id" required size="8">
+        {% for s in all_students %}<option value="{{ s.id }}">{{ s.name }}（{{ s.phone }}）{{ '· 余'+s.total_remaining()|string+'节' if s.total_remaining() else '' }}</option>{% endfor %}
+      </select>
+      <div class="text-secondary mt-2" style="font-size:12px">自动校验容量，满员将拒绝</div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">加入班级</button></div>
+  </form>
+</div></div></div>
+{% endfor %}
+{% endblock %}
+{% block scripts %}
+<script>
+function filterOpt(inp, selSel){
+  const kw = inp.value.trim();
+  document.querySelectorAll(selSel).forEach(sel=>{
+    [...sel.options].forEach(o=>{ o.hidden = kw && !o.text.includes(kw); });
+  });
+}
+</script>
+{% endblock %}

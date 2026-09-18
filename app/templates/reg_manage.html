@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}报名管理 - {{ site_name }}{% endblock %}
+{% block mtitle %}报名管理{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">报名管理</div>
+      <div class="page-sub mb-0">确认报名 = 自动建档入班（手机号选填，不填按报名尾号）</div>
+    </div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('register.export', entry_id=entry_id) }}"><i class="bi bi-download"></i> 导出 Excel</a>
+  </div>
+
+  <form class="d-flex gap-2 mt-3 flex-wrap align-items-center" method="get">
+    <div class="btn-group btn-group-sm" role="group">
+      {% for st, label in [('pending','待确认'),('confirmed','已确认'),('cancelled','已取消')] %}
+      <a class="btn {{ 'btn-primary' if status==st else 'btn-outline-primary' }}" href="{{ url_for('register.manage', status=st, entry_id=entry_id) }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <select class="form-select form-select-sm" style="width:auto" name="entry_id" onchange="this.form.submit()">
+      <option value="">全部批次</option>{% for e in entries %}<option value="{{ e.id }}" {{ 'selected' if entry_id==e.id }}>{{ e.name }}</option>{% endfor %}
+    </select>
+    {% if status != 'pending' %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    <input class="form-control form-control-sm" style="width:150px" name="kw" value="{{ kw }}" placeholder="姓名/手机号">
+    <button class="btn btn-sm btn-soft">筛选</button>
+  </form>
+
+  <div class="row g-3 mt-1">
+    {% for r in regs %}
+    <div class="col-12 col-lg-6">
+      <div class="card-ld"><div class="card-b">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-bold fs-5">{{ r.student_name }}
+              <span class="text-secondary ms-1" style="font-size:13px;font-weight:400">{{ r.grade }}</span>
+            </div>
+            <div class="text-secondary" style="font-size:12.5px">
+              {{ r.entry.name if r.entry else '-' }} · 尾号 {{ r.phone_last4 }}{% if r.guardian_name %} · {{ r.guardian_name }}{% endif %}
+              {% if r.guardian_phone %} · {{ r.guardian_phone }}{% endif %}
+            </div>
+          </div>
+          <span class="st-badge {{ 'trial' if r.status=='pending' else 'active' if r.status=='confirmed' else 'archived' }}">{{ _status_cn.get(r.status) }}</span>
+        </div>
+        <div class="cg-meta mt-2">
+          <span><i class="bi bi-calendar3"></i>{{ r.class_group.name if r.class_group else '班级已删' }}</span>
+          <span><i class="bi bi-clock"></i>{{ r.created_at.strftime('%m-%d %H:%M') }}</span>
+          {% if r.status == 'confirmed' and students.get(r.id) %}
+          <span class="st-badge active">已建档为学员 #{{ students[r.id].id }}</span>
+          {% endif %}
+        </div>
+        {% if r.status == 'pending' %}
+        <div class="alert alert-light border mt-3 mb-0 py-2" style="font-size:12.5px">
+          <i class="bi bi-info-circle me-1"></i>确认时将创建学员并加入「{{ r.class_group.name if r.class_group else '' }}」，请核对手机号
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <button class="btn btn-sm btn-primary flex-fill" data-bs-toggle="modal" data-bs-target="#mC{{ r.id }}"><i class="bi bi-check-lg"></i> 确认并建档</button>
+          <form method="post" action="{{ url_for('register.cancel', rid=r.id) }}" class="flex-fill" data-confirm="确认取消该报名？">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger w-100">取消</button>
+          </form>
+        </div>
+        {% elif r.status == 'confirmed' %}
+        <div class="d-flex justify-content-end mt-2">
+          {% set stu = students.get(r.id) %}
+          {% if stu %}<a class="btn btn-sm btn-soft" href="{{ url_for('students.detail', sid=stu.id) }}"><i class="bi bi-folder2-open"></i> 查看学员档案</a>{% endif %}
+        </div>
+        {% endif %}
+      </div></div>
+    </div>
+
+    {% if r.status == 'pending' %}
+    <div class="modal fade" id="mC{{ r.id }}"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+      <div class="modal-header py-2"><h6 class="modal-title">确认报名 → {{ r.student_name }}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form method="post" action="{{ url_for('register.confirm', rid=r.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="alert alert-light border py-2" style="font-size:13px">
+            <i class="bi bi-info-circle me-1"></i>确认后自动创建学员档案并加入「{{ r.class_group.name if r.class_group else '' }}」，学员即可开始交费/消课。
+          </div>
+          <div class="mb-2"><label class="form-label">家长手机号（选填，不填则按尾号建档）</label>
+            <input class="form-control" name="guardian_phone" placeholder="报名尾号 {{ r.phone_last4 }}，可补全完整号码">
+          </div>
+          <div><label class="form-label">家长姓名</label>
+            <input class="form-control" name="guardian_name" value="{{ r.guardian_name }}" placeholder="选填"></div>
+        </div>
+        <div class="modal-footer py-2"><button class="btn btn-primary px-4">确认并建档</button></div>
+      </form>
+    </div></div></div>
+    {% endif %}
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-inbox"></i>暂无{{ _status_cn.get(status, '') }}报名</div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

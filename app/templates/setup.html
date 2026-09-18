@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}系统初始化 - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-bg" aria-hidden="true"{% if site_bg %} style="background-image:url({{ site_bg }})"{% endif %}></div>
+  <div class="auth-card">
+    <div class="auth-logo">{% if site_logo %}<img src="{{ site_logo }}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:18px">{% else %}<i class="bi bi-stars"></i>{% endif %}</div>
+    <h1 class="auth-title">初始化系统</h1>
+    <p class="auth-sub">首次使用 · 创建系统管理员账号</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+      <div class="alert alert-{{ 'danger' if cat=='danger' else 'warning' if cat=='warning' else 'success' if cat=='success' else 'info' }} py-2" style="font-size:13.5px">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <label class="form-label">系统名称</label>
+        <div class="input-group auth-input">
+          <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-house-heart"></i></span>
+          <input class="form-control border-start-0" name="site_name" value="{{ site_name }}" placeholder="如：课时本">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">管理员账号</label>
+        <div class="input-group auth-input">
+          <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-person-gear"></i></span>
+          <input class="form-control border-start-0" name="username" required autofocus placeholder="3 个字符以上">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">密码</label>
+        <div class="input-group auth-input">
+          <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key"></i></span>
+          <input class="form-control border-start-0" type="password" name="password" required placeholder="至少 6 位">
+        </div>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">确认密码</label>
+        <div class="input-group auth-input">
+          <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-key"></i></span>
+          <input class="form-control border-start-0" type="password" name="password2" required>
+        </div>
+      </div>
+      <button class="btn btn-primary w-100 py-2 auth-btn">创建并进入系统</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

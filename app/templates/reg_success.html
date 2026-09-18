@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}报名成功 - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:560px;padding-top:4vh">
+  <div class="card-ld text-center"><div class="card-b p-4">
+    <div class="display-5 text-success mb-2"><i class="bi bi-check-circle-fill"></i></div>
+    <h4 class="fw-bold">报名提交成功</h4>
+    <p class="text-secondary" style="font-size:14px">{{ name }} → {{ cg_name }}</p>
+
+    <div class="alert alert-warning text-start" style="font-size:14px">
+      <div class="fw-bold mb-1"><i class="bi bi-key me-1"></i>修改码（请截图保存，仅显示这一次）</div>
+      <div class="text-center py-2">
+        <span style="font-size:34px;font-weight:800;letter-spacing:8px;font-family:monospace">{{ code }}</span>
+      </div>
+      <div class="text-secondary" style="font-size:12.5px">凭「姓名 + 手机尾号 + 修改码」可修改班级，限 3 次。</div>
+    </div>
+
+    <div class="alert alert-light border text-start" style="font-size:13.5px">
+      <i class="bi bi-info-circle me-1"></i>接下来：老师会电话联系确认（请留意来电），确认后正式入班上课。
+    </div>
+
+    <div class="d-grid gap-2">
+      <a class="btn btn-outline-primary" href="{{ url_for('register.register_modify', token=entry.token) }}">修改班级</a>
+      <a class="btn btn-light border" href="/">返回首页</a>
+    </div>
+  </div></div>
+</div>
+{% endblock %}

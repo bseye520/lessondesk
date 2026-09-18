@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}课程管理 - {{ site_name }}{% endblock %}
+{% block mtitle %}课程管理{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:900px">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">课程管理</div>
+      <div class="page-sub mb-0">课程是班次的分类基础（素描 / 水彩 / 国画 …）</div>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mNew"><i class="bi bi-plus-lg"></i> 新建课程</button>
+  </div>
+
+  <div class="d-flex gap-2 mt-3">
+    {% if super %}
+    <select class="form-select form-select-sm" style="width:auto" onchange="location.href='{{ url_for('admin.courses') }}?campus_id='+this.value">
+      <option value="">全部校区</option>{% for c in campuses %}<option value="{{ c.id }}" {{ 'selected' if cid==c.id }}>{{ c.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <a class="btn btn-sm {{ 'btn-soft' if show_archived else 'btn-outline-secondary' }}" href="{{ url_for('admin.courses', archived=0 if show_archived else 1) }}">{{ '只看在用' if show_archived else '含归档' }}</a>
+  </div>
+
+  <div class="row g-3 mt-1">
+    {% for c in courses %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="card-ld"><div class="card-b text-center py-3">
+        <div class="fs-3 mb-1"><i class="bi {{ {'素描':'bi-pencil','水彩':'bi-droplet-half','国画':'bi-brush','书法':'bi-fonts','动漫':'bi-stars','儿童创意':'bi-emoji-sunglasses','高考':'bi-mortarboard','其他':'bi-palette'}.get(c.category, 'bi-palette') }}"></i></div>
+        <div class="fw-semibold">{{ c.name }}</div>
+        <div class="text-secondary" style="font-size:12px">{{ c.category }}{% if super %} · {{ c.campus.name }}{% endif %}</div>
+        {% if c.is_archived %}<div class="st-badge archived mt-1">已归档</div>{% endif %}
+        <form method="post" action="{{ url_for('admin.course_archive', cid=c.id) }}" class="mt-2">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-secondary w-100">{{ '恢复' if c.is_archived else '归档' }}</button>
+        </form>
+      </div></div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-palette"></i>暂无课程</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="mNew"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">新建课程</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('admin.course_create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if super %}<input type="hidden" name="campus_id" value="{{ cid or '' }}">{% endif %}
+    <div class="modal-body">
+      {% if super and not cid %}
+      <div class="text-warning small mb-2">请先在列表上方选择校区</div>
+      {% endif %}
+      <div class="mb-2"><label class="form-label">课程名称 *</label><input class="form-control" name="name" required placeholder="如：素描"></div>
+      <div><label class="form-label">类别</label><select class="form-select" name="category">
+        {% for c in ['素描','水彩','国画','书法','动漫','儿童创意','高考','其他'] %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">创建</button></div>
+  </form>
+</div></div></div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}个人中心 - {{ site_name }}{% endblock %}
+{% block mtitle %}个人中心{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:640px">
+  <div class="page-title">个人中心</div>
+  <div class="page-sub">账号资料与安全</div>
+
+  <div class="card-ld mb-3">
+    <div class="card-b d-flex align-items-center gap-3">
+      <span class="avatar-dot" style="width:52px;height:52px;font-size:20px">{{ me.username[0]|upper }}</span>
+      <div>
+        <div class="fw-bold fs-5">{{ me.username }}</div>
+        <div class="text-secondary" style="font-size:13px">{{ me.role_name }}{% if me.campus %} · {{ me.campus.name }}{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-ld">
+    <div class="card-h">修改密码</div>
+    <div class="card-b">
+      <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">原密码</label>
+          <input class="form-control" type="password" name="old_password" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">新密码</label>
+          <input class="form-control" type="password" name="new_password" required placeholder="至少 6 位">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">确认新密码</label>
+          <input class="form-control" type="password" name="new_password2" required>
+        </div>
+        <button class="btn btn-primary px-4">保存修改</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

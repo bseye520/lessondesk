@@ -1,0 +1,41 @@
+# 运行期数据（绝对不要提交！含真实学员信息）
+instance/
+data/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+
+# 密钥与本地配置
+.env
+.env.local
+*.env.bak
+
+# 上传文件（机构自己的 logo / 二维码 / 背景图）
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# 备份
+backups/
+*.bak
+*.tar.gz
+*.tgz
+
+# 日志
+*.log
+security.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# 编辑器 / 系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}报名入口 - {{ site_name }}{% endblock %}
+{% block mtitle %}报名入口{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">报名入口</div>
+      <div class="page-sub mb-0">每个入口生成一个专属链接，发给家长选班</div>
+    </div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mNew"><i class="bi bi-plus-lg"></i> 新建入口</button>
+  </div>
+
+  <div class="row g-3 mt-1">
+    {% for e in items %}
+    <div class="col-12 col-lg-6">
+      <div class="card-ld"><div class="card-b">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-bold fs-5">{{ e.name }}</div>
+            <div class="text-secondary" style="font-size:12.5px">{{ e.campus.name }} · 报名 {{ e.registrations|length }} 条
+              {% if e.deadline %} · 截止 {{ e.deadline.strftime('%m-%d %H:%M') }}{% endif %}
+            </div>
+          </div>
+          <span class="st-badge {{ 'active' if e.is_open() else 'archived' }}">{{ '开放中' if e.is_open() else '已关闭' }}</span>
+        </div>
+        {% set base = request.url_root.rstrip('/') %}
+        <div class="input-group input-group-sm mt-2">
+          <input class="form-control" readonly value="{{ base }}{{ url_for('register.register_home', token=e.token) }}" id="link{{ e.id }}">
+          <button class="btn btn-outline-secondary" type="button" onclick="copyLink({{ e.id }})">复制</button>
+        </div>
+        {% if e.contact %}<div class="text-secondary mt-1" style="font-size:12px">联系方式：{{ e.contact }}</div>{% endif %}
+        <div class="d-flex gap-2 mt-3">
+          <a class="btn btn-sm btn-soft" href="{{ url_for('register.register_home', token=e.token) }}" target="_blank"><i class="bi bi-box-arrow-up-right"></i> 打开页面</a>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('register.manage', entry_id=e.id) }}"><i class="bi bi-clipboard-check"></i> 查看报名</a>
+          <form method="post" action="{{ url_for('register.entry_toggle', eid=e.id) }}" class="ms-auto">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm {{ 'btn-outline-danger' if e.enabled else 'btn-outline-success' }}">{{ '关闭入口' if e.enabled else '重新开放' }}</button>
+          </form>
+          {% if not e.registrations %}
+          <form method="post" action="{{ url_for('register.entry_delete', eid=e.id) }}" data-confirm="确认删除该入口？">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-secondary text-danger">删除</button>
+          </form>
+          {% endif %}
+        </div>
+      </div></div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-box-arrow-in-right"></i>暂无入口，点右上角创建</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="mNew"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">新建报名入口</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('register.entry_create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      {% if super %}<div class="mb-2"><label class="form-label">校区</label><select class="form-select" name="campus_id" required>{% for c in campuses if c.is_active %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="mb-2"><label class="form-label">批次名称 *</label><input class="form-control" name="name" required placeholder="如：2026 秋季报名"></div>
+      <div class="mb-2"><label class="form-label">截止时间（留空=不限）</label><input class="form-control" type="datetime-local" name="deadline"></div>
+      <div><label class="form-label">页面展示的联系方式</label><textarea class="form-control" name="contact" rows="2" placeholder="如：报名后请微信联系张老师确认"></textarea></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">创建并生成链接</button></div>
+  </form>
+</div></div></div>
+{% endblock %}
+{% block scripts %}
+<script>
+function copyLink(id){
+  const inp = document.getElementById('link'+id);
+  inp.select(); document.execCommand('copy');
+  alert('链接已复制，可发给家长');
+}
+</script>
+{% endblock %}

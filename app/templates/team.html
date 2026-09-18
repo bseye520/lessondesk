@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}教师账号 - {{ site_name }}{% endblock %}
+{% block mtitle %}教师账号{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:900px">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">教师账号</div>
+      <div class="page-sub mb-0">{{ me.campus.name if mgr and me.campus else '全部教师' }} · 教师账号由校区管理员创建</div>
+    </div>
+    {% if super %}<div class="text-secondary" style="font-size:13px">切换校区请用「账号管理」</div>{% endif %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mNew"><i class="bi bi-plus-lg"></i> 新建教师</button>
+  </div>
+
+  <div class="row g-3 mt-1">
+    {% for t in teachers %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="card-ld"><div class="card-b d-flex align-items-center gap-2">
+        <span class="avatar-dot">{{ t.username[0]|upper }}</span>
+        <div class="flex-grow-1">
+          <div class="fw-bold">{{ t.username }}</div>
+          <div class="text-secondary" style="font-size:12px">{{ t.campus.name if t.campus else '-' }} · {{ t.class_groups|length if false }}任教班次：{{ t.id }}</div>
+        </div>
+        <span class="st-badge {{ 'active' if t.is_active else 'archived' }}">{{ '正常' if t.is_active else '停用' }}</span>
+      </div>
+      <div class="card-b pt-0 d-flex gap-2">
+        {% if t.id != me.id %}
+        <form method="post" action="{{ url_for('admin.team_toggle', uid=t.id) }}" class="flex-fill">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-secondary w-100">{{ '停用' if t.is_active else '启用' }}</button>
+        </form>
+        {% endif %}
+        <button class="btn btn-sm btn-outline-secondary flex-fill" data-bs-toggle="modal" data-bs-target="#mReset{{ t.id }}">重置密码</button>
+      </div></div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-person-badge"></i>还没有教师账号</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal fade" id="mNew"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">新建教师账号</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('admin.team_create') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if super %}<input type="hidden" name="campus_id" value="{{ cid or '' }}">{% endif %}
+    <div class="modal-body">
+      <div class="mb-2"><label class="form-label">登录账号 *</label><input class="form-control" name="username" required placeholder="如：wanglaoshi"></div>
+      <div><label class="form-label">初始密码 *</label><input class="form-control" name="password" required placeholder="至少 6 位"></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">创建</button></div>
+  </form>
+</div></div></div>
+
+{% for t in teachers %}
+<div class="modal fade" id="mReset{{ t.id }}"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">重置密码：{{ t.username }}</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('admin.team_reset', uid=t.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body"><label class="form-label">新密码</label><input class="form-control" type="text" name="password" required placeholder="至少 6 位"></div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">保存</button></div>
+  </form>
+</div></div></div>
+{% endfor %}
+{% endblock %}

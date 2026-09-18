@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}点名消课 - {{ cg.name }}{% endblock %}
+{% block mtitle %}点名消课{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:900px">
+  <a href="{{ url_for('lessons.my_home') if tea else url_for('classes.list_cg') }}" class="text-secondary" style="font-size:13px"><i class="bi bi-arrow-left"></i> 返回</a>
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mt-1">
+    <div>
+      <div class="page-title">{{ cg.name }}</div>
+      <div class="page-sub mb-0">{{ cg.weekday }} {{ cg.start_time }}-{{ cg.end_time }} · {{ cg.room or '未设教室' }} · 在班 {{ data|length }} 人</div>
+    </div>
+    <span class="text-secondary" style="font-size:13px"><i class="bi bi-info-circle"></i> 出勤/缺勤(扣) 扣 <b>{{ cg.deduct_lessons or 1 }}</b> 课时/人；请假/缺勤(退) 不扣</span>
+  </div>
+
+  {% if data %}
+  <form method="post" action="{{ url_for('lessons.batch') }}" id="batchForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="class_group_id" value="{{ cg.id }}">
+    <div class="d-flex align-items-center gap-2 my-3">
+      <label class="form-label mb-0">课时长</label>
+      <select class="form-select form-select-sm" style="width:110px" name="duration">
+        {% for d in [45,60,90,120,150,180] %}<option value="{{ d }}" {{ 'selected' if d==60 }}>{{ d }} 分钟</option>{% endfor %}
+      </select>
+      <button class="btn btn-outline-secondary btn-sm ms-auto" type="button" onclick="document.querySelectorAll('.st-check').forEach(c=>c.checked=true)">全选</button>
+      <button class="btn btn-outline-secondary btn-sm" type="button" onclick="document.querySelectorAll('.st-check').forEach(c=>c.checked=false)">清空</button>
+    </div>
+
+    <div class="row g-3">
+      {% for d in data %}
+      {% set s = d.student %}
+      <div class="col-12 col-sm-6 col-lg-4">
+        <label class="card-ld d-block h-100 p-0 overflow-hidden" style="cursor:pointer">
+          <div class="p-3 pb-2 d-flex align-items-center gap-2">
+            <input class="form-check-input st-check mt-0" type="checkbox" name="student_ids" value="{{ s.id }}" checked>
+            <div class="flex-grow-1">
+              <div class="fw-semibold">{{ s.name }}</div>
+              <div style="font-size:12px" class="text-secondary">
+                余 <b class="{{ 'text-danger' if d.remaining < (cg.deduct_lessons or 1) else 'text-primary' }}">{{ d.remaining }}</b> 节
+                {% if d.remaining < (cg.deduct_lessons or 1) %}<span class="st-badge archived ms-1">课时不足</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="px-3 pb-3">
+            <div class="btn-group w-100 btn-group-sm" role="group">
+              {% for val, label in [('present','出勤'),('leave','请假'),('absent_refund','缺勤退'),('absent_deduct','缺勤扣')] %}
+              <input type="radio" class="btn-check" name="status_{{ s.id }}" id="st{{ s.id }}{{ loop.index }}" value="{{ val }}" {{ 'checked' if val=='present' }}>
+              <label class="btn btn-outline-primary" for="st{{ s.id }}{{ loop.index }}" style="font-size:12px">{{ label }}</label>
+              {% endfor %}
+            </div>
+          </div>
+        </label>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="d-grid d-sm-flex gap-2 mt-4">
+      <button id="submitBtn" class="btn btn-primary btn-lg flex-fill" type="button" onclick="doSubmit()"><i class="bi bi-check2-circle"></i> 确认提交点名</button>
+    </div>
+  </form>
+  {% else %}
+  <div class="card-ld card-b empty mt-3"><i class="bi bi-people"></i>该班暂无在册学员，请先在班次/学员页加入</div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+var _attArm = false, _attTimer = null;
+function doSubmit(){
+  const checked = document.querySelectorAll('.st-check:checked').length;
+  if(!checked){ alert('请至少选择一名学员'); return; }
+  const btn = document.getElementById('submitBtn');
+  if(!_attArm){
+    _attArm = true;
+    btn.innerHTML = '⚠️ 确认提交 ' + checked + ' 名学员？（再点一次确认）';
+    btn.classList.add('btn-danger');
+    clearTimeout(_attTimer);
+    _attTimer = setTimeout(function(){ _attArm = false; btn.classList.remove('btn-danger'); btn.innerHTML = '<i class="bi bi-check2-circle"></i> 确认提交点名'; }, 4000);
+    return;
+  }
+  document.getElementById('batchForm').submit();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}概览 - {{ site_name }}{% endblock %}
+{% block mtitle %}概览{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="page-title">{{ me.campus.name if me.campus else '概览' }}</div>
+  <div class="page-sub">今日要点与快捷入口</div>
+
+  <div class="stat-grid">
+    <div class="stat-card blue"><i class="bi bi-people ic"></i><div class="n">{{ student_count }}</div><div class="l">在册学员</div></div>
+    <div class="stat-card green"><i class="bi bi-calendar3 ic"></i><div class="n">{{ class_count }}</div><div class="l">进行班次</div></div>
+    <div class="stat-card purple"><i class="bi bi-lightning-charge ic"></i><div class="n">{{ total_remaining }}</div><div class="l">学员剩余总课时</div></div>
+    <div class="stat-card orange"><i class="bi bi-cash-stack ic"></i><div class="n">{{ month_income }}</div><div class="l">本月交费笔数</div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('classes.list_cg') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-calendar3 fs-2" style="color:var(--ld-primary)"></i><div class="mt-2 fw-semibold">班次管理</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('students.list_students') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-person-video3 fs-2" style="color:var(--ld-ok)"></i><div class="mt-2 fw-semibold">学员管理</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('register.manage') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-clipboard-check fs-2" style="color:var(--ld-warn)"></i><div class="mt-2 fw-semibold">报名管理</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('finance.dashboard') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-wallet2 fs-2" style="color:var(--ld-danger)"></i><div class="mt-2 fw-semibold">财务</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('lessons.records') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-list-check fs-2" style="color:#7c3aed"></i><div class="mt-2 fw-semibold">消课记录</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('admin.team') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-person-badge fs-2" style="color:#0d9488"></i><div class="mt-2 fw-semibold">教师账号</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('admin.courses') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-palette fs-2" style="color:#e11d48"></i><div class="mt-2 fw-semibold">课程管理</div></div>
+      </a>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="{{ url_for('register.entries') }}" class="text-decoration-none">
+        <div class="card-ld card-b text-center py-4 h-100"><i class="bi bi-box-arrow-in-right fs-2" style="color:var(--ld-primary)"></i><div class="mt-2 fw-semibold">报名入口</div></div>
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

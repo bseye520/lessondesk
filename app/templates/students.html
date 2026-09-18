@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}学员管理 - {{ site_name }}{% endblock %}
+{% block mtitle %}学员管理{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="d-flex justify-content-between align-items-end flex-wrap gap-2">
+    <div>
+      <div class="page-title">学员管理</div>
+      <div class="page-sub mb-0">{{ '查看学员与剩余课时' if is_teacher else '建档 · 交费 · 调班 · 归档' }}</div>
+    </div>
+    {% if not is_teacher %}
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#mNew"><i class="bi bi-plus-lg"></i> 新建学员</button>
+    {% endif %}
+  </div>
+
+  <form class="d-flex gap-2 mt-3 flex-wrap" method="get">
+    <input class="form-control form-control-sm" style="max-width:240px" name="kw" value="{{ kw }}" placeholder="姓名 / 手机号 / 家长">
+    <select class="form-select form-select-sm" style="width:auto" name="class_group_id" onchange="this.form.submit()">
+      <option value="">全部班级</option>{% for g in groups %}<option value="{{ g.id }}" {{ 'selected' if cg_id==g.id }}>{{ g.name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm btn-soft">搜索</button>
+    <a class="btn btn-sm {{ 'btn-soft' if status=='archived' else 'btn-outline-secondary' }}" href="{{ url_for('students.list_students', kw=kw, status='archived' if status!='archived' else '') }}">{{ '含归档' if status!='archived' else '返回在册' }}</a>
+  </form>
+
+  <div class="row g-3 mt-1">
+    {% for s in students %}
+    <div class="col-12 col-sm-6 col-xl-4">
+      <div class="card-ld h-100"><div class="card-b st-card">
+        <div class="row1">
+          <div class="d-flex align-items-center gap-2">
+            <span class="avatar-dot">{{ s.name[0] }}</span>
+            <div><div class="name">{{ s.name }}</div>
+              <div class="st-meta">{{ s.grade or '未填年级' }}{% if s.parent_name %} · {{ s.parent_name }}{% endif %}</div>
+            </div>
+          </div>
+          <span class="st-badge {{ s.status }}">{{ {'active':'在册','trial':'试听','archived':'已归档'}.get(s.status, s.status) }}</span>
+        </div>
+        <div class="st-meta"><i class="bi bi-telephone me-1"></i>{{ s.phone }}</div>
+        {% if s.active_class_names() %}<div class="st-meta"><i class="bi bi-calendar3 me-1"></i>{{ s.active_class_names() }}</div>{% endif %}
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="st-remain">剩余课时 <b>{{ s.total_remaining() }}</b> 节</div>
+          {% if not is_teacher %}
+          <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#mNewContract{{ s.id }}"><i class="bi bi-cash-coin"></i> 交费登记</button>
+          {% endif %}
+        </div>
+        <div class="cg-actions">
+          <a class="btn btn-sm btn-soft flex-fill" href="{{ url_for('students.detail', sid=s.id) }}"><i class="bi bi-folder2-open"></i> 详情 / 管理</a>
+        </div>
+      </div></div>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-person-video3"></i>没有匹配的学员</div></div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if not is_teacher %}
+<div class="modal fade" id="mNew"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">新建学员</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('students.create_student') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      {% if super %}<div class="mb-2"><label class="form-label">校区</label><select class="form-select" name="campus_id" required>{% for c in campuses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="row g-2">
+        <div class="col-8"><label class="form-label">姓名 *</label><input class="form-control" name="name" required></div>
+        <div class="col-4"><label class="form-label">性别</label><select class="form-select" name="gender"><option value="">-</option><option>男</option><option>女</option></select></div>
+      </div>
+      <div class="mb-2 mt-2"><label class="form-label">手机号 *（完整号码或尾号均可）</label><input class="form-control" name="phone" required placeholder="家长手机号/尾号"></div>
+      <div class="row g-2">
+        <div class="col-6"><label class="form-label">家长姓名</label><input class="form-control" name="parent_name"></div>
+        <div class="col-6"><label class="form-label">年级</label><input class="form-control" name="grade" placeholder="如：三年级"></div>
+      </div>
+      <div class="row g-2 mt-0">
+        <div class="col-6"><label class="form-label">生日</label><input class="form-control" type="date" name="birthday"></div>
+        <div class="col-6"><label class="form-label">加入班级（可选）</label><select class="form-select" name="class_group_id"><option value="">暂不加入</option>{% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select></div>
+      </div>
+      <div class="mt-2"><label class="form-label">备注</label><textarea class="form-control" name="remarks" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">创建</button></div>
+  </form>
+</div></div></div>
+
+{# 交费登记 modal（逐学员） #}
+{% for s in students if s.status != 'archived' %}
+<div class="modal fade" id="mNewContract{{ s.id }}"><div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+  <div class="modal-header py-2"><h6 class="modal-title">交费登记：{{ s.name }}（当前余 {{ s.total_remaining() }} 节）</h6><button class="btn-close" data-bs-dismiss="modal"></button></div>
+  <form method="post" action="{{ url_for('students.new_contract', sid=s.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="modal-body">
+      <div class="row g-2">
+        <div class="col-6"><label class="form-label">购买课时 *</label><input class="form-control" type="number" min="1" name="lessons" required placeholder="如：20"></div>
+        <div class="col-6"><label class="form-label">赠课数</label><input class="form-control" type="number" min="0" name="bonus" value="0" placeholder="如：2"></div>
+      </div>
+      <div class="mb-2 mt-2"><label class="form-label">实收金额（元）</label><input class="form-control" type="number" min="0" step="0.01" name="amount" placeholder="仅备注用，不参与计算"></div>
+      <div><label class="form-label">备注（选填）</label><input class="form-control" name="remarks" placeholder="如：暑期活动价"></div>
+      <div class="alert alert-light border py-2 mt-2 mb-0" style="font-size:12px">
+        <i class="bi bi-info-circle me-1"></i>保存后自动累加剩余课时：<b>购买 + 赠送</b>。金额只作记录，不计算单价。
+      </div>
+    </div>
+    <div class="modal-footer py-2"><button class="btn btn-primary px-4">保存交费记录</button></div>
+  </form>
+</div></div></div>
+{% endfor %}
+{% endif %}
+{% endblock %}

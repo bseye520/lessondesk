@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}{{ entry.name }} - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container-ld" style="max-width:760px">
+  <div class="text-center py-4">
+    <div class="display-6 mb-2"><i class="bi bi-mortarboard-fill" style="color:var(--ld-primary)"></i></div>
+    <h4 class="fw-bold mb-1">{{ entry.name }}</h4>
+    <div class="text-secondary" style="font-size:13px">{{ entry.campus.display_name or entry.campus.name }}
+      {% if entry.deadline %} · 截止 {{ entry.deadline.strftime('%m月%d日 %H:%M') }}{% endif %}
+    </div>
+    {% if entry.contact %}<div class="text-secondary mt-1" style="font-size:13px"><i class="bi bi-chat-dots me-1"></i>{{ entry.contact }}</div>{% endif %}
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ 'danger' if cat=='danger' else 'warning' if cat=='warning' else 'success' if cat=='success' else 'info' }}" style="font-size:14px">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card-ld mb-4"><div class="card-h">选择班级</div>
+    <div class="card-b">
+      <form method="post" id="regForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row g-2">
+          <div class="col-12 col-sm-6"><label class="form-label">学生姓名 *</label>
+            <input class="form-control" name="name" required maxlength="30" placeholder="孩子姓名"></div>
+          <div class="col-6 col-sm-3"><label class="form-label">年级</label>
+            <input class="form-control" name="grade" placeholder="如：三年级"></div>
+          <div class="col-6 col-sm-3"><label class="form-label">手机尾号 4 位 *</label>
+            <input class="form-control" name="phone_last4" required maxlength="4" inputmode="numeric" pattern="\d{4}" placeholder="1234"></div>
+        </div>
+        <div class="text-secondary mb-2" style="font-size:12px">手机尾号仅用于查询报名，请放心填写</div>
+
+        <div class="row g-3 mt-0">
+          {% for it in items %}
+          <div class="col-12 col-sm-6">
+            <label class="d-block">
+              <input class="btn-check" type="radio" name="class_group_id" value="{{ it.id }}" {{ 'disabled' if it.full }} autocomplete="off">
+              <div class="card-ld p-3 h-100 {{ 'opacity-50' if it.full }}" style="cursor:pointer">
+                <div class="d-flex justify-content-between">
+                  <div class="fw-semibold">{{ it.name }}</div>
+                  <span class="cg-tag">{{ it.course }}</span>
+                </div>
+                <div class="cg-meta mt-1">
+                  <span><i class="bi bi-clock"></i>{{ it.weekday }} {{ it.start_time }}-{{ it.end_time }}</span>
+                  <span><i class="bi bi-door-open"></i>{{ it.room or '-' }}</span>
+                  <span><i class="bi bi-person"></i>{{ it.teacher }}</span>
+                </div>
+                <div class="mt-1" style="font-size:12.5px">
+                  {% if it.full %}<span class="text-danger fw-semibold">已满员</span>
+                  {% elif it.low %}<span class="text-danger fw-semibold">仅余 {{ it.slots_text }} 席</span>
+                  {% else %}<span class="text-secondary">余 {{ it.slots_text }} 席</span>{% endif %}
+                </div>
+              </div>
+            </label>
+          </div>
+          {% else %}
+          <div class="col-12"><div class="empty"><i class="bi bi-calendar-x"></i>暂无可选班级</div></div>
+          {% endfor %}
+        </div>
+        <button class="btn btn-primary btn-lg w-100 mt-4" type="submit"><i class="bi bi-send"></i> 提交报名</button>
+      </form>
+      <div class="text-center mt-3">
+        <a href="{{ url_for('register.register_modify', token=entry.token) }}" class="text-secondary" style="font-size:13px">已报名？查询 / 修改班级</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('regForm').addEventListener('submit', function(e){
+  const sel = this.querySelector('input[name=class_group_id]:checked');
+  if(!sel){ e.preventDefault(); alert('请先选择一个班级'); }
+});
+// 2026-09-05: 点击卡片显式勾选 radio（防移动端 label 行为差异）
+document.querySelectorAll('#regForm label.d-block').forEach(function(l){
+  l.addEventListener('click', function(){
+    const inp = this.querySelector('input[name=class_group_id]');
+    if (inp && !inp.disabled) inp.checked = true;
+  });
+});
+</script>
+{% endblock %}

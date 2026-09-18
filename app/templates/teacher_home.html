@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}我的课 - {{ site_name }}{% endblock %}
+{% block mtitle %}我的课{% endblock %}
+{% block content %}
+<div class="container-ld">
+  <div class="page-title">我的课</div>
+  <div class="page-sub">今天 {{ today_wd }} · 点击班次卡片进入点名</div>
+
+  <div class="row g-3">
+    {% for g in groups %}
+    <div class="col-12 col-md-6 col-xl-4">
+      <a href="{{ url_for('lessons.attendance', gid=g.id) }}" class="text-decoration-none">
+        <div class="card-ld h-100">
+          <div class="card-b">
+            <div class="d-flex justify-content-between align-items-start">
+              <div class="fw-bold fs-5 text-dark">{{ g.name }}</div>
+              {% if g.weekday == today_wd %}<span class="cg-tag" style="background:#dcfce7;color:#15803d">今天</span>{% endif %}
+            </div>
+            <div class="cg-meta mt-2">
+              <span><i class="bi bi-clock"></i>{{ g.weekday }} {{ g.start_time }}-{{ g.end_time }}</span>
+              <span><i class="bi bi-door-open"></i>{{ g.room or '未设教室' }}</span>
+              <span><i class="bi bi-people"></i>{{ g.active_enroll_count() }} 人</span>
+              <span><i class="bi bi-palette"></i>{{ g.course.name if g.course else '-' }}</span>
+            </div>
+            <div class="mt-3 btn btn-soft w-100 btn-sm">去点名 <i class="bi bi-arrow-right"></i></div>
+          </div>
+        </div>
+      </a>
+    </div>
+    {% else %}
+    <div class="col-12"><div class="card-ld card-b empty"><i class="bi bi-calendar-x"></i>还没有安排班次，请联系管理员</div></div>
+    {% endfor %}
+  </div>
+
+  {% if recent %}
+  <div class="ld-section-title"><i class="bi bi-clock-history"></i>最近消课</div>
+  <div class="card-ld"><div class="card-b flush">
+    <div class="table-responsive"><table class="ld-table">
+      <thead><tr><th>时间</th><th>班次</th><th>学员</th><th>状态</th><th>扣课时</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+        <tr>
+          <td>{{ r.date.strftime('%m-%d %H:%M') }}</td>
+          <td>{{ r.class_group.name }}</td>
+          <td>{{ r.student.name }}</td>
+          <td>{{ {'present':'出勤','leave':'请假','absent_refund':'缺勤退','absent_deduct':'缺勤扣'}.get(r.status, r.status) }}{% if r.revoked_at %}<span class="st-badge archived ms-1">已撤销</span>{% endif %}</td>
+          <td>{{ r.deducted_lessons }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </div></div>
+  {% endif %}
+</div>
+{% endblock %}
