@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>{% block title %}{{ site_name }}{% endblock %}</title>
+
+{# ---------------- PWA（可安装 / 独立窗口运行） ---------------- #}
+<link rel="manifest" href="{{ url_for('webmanifest') }}">
+<meta name="theme-color" content="#e12232">
+<meta name="application-name" content="课时本">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="课时本">
+<meta name="format-detection" content="telephone=no">
+{# ------------------------------------------------------------ #}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/bootstrap-icons.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=20260908">
@@ -169,5 +182,20 @@
 })();
 </script>
 {% block scripts %}{% endblock %}
+
+{# ---------------- PWA：注册 Service Worker ----------------
+   根路径 /sw.js → 作用域是整个站点。
+   只在 https 或 localhost 下生效（浏览器限制），局域网 http 直连不会注册，属正常。
+   推送（Push Notification）暂未启用，结构已在 sw.js 里预留。
+#}
+<script>
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('{{ url_for('service_worker') }}', { scope: '/' })
+      .catch(function (err) { /* 注册失败不影响正常使用 */ console.warn('SW 注册失败', err); });
+  });
+})();
+</script>
 </body>
 </html>

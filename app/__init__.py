@@ -1,14 +1,20 @@
 """课时本 LessonDesk - 应用工厂"""
 import logging
+import mimetypes
 import os
-from flask import Flask, g, render_template, request, redirect, url_for
+from flask import (Flask, g, render_template, request, redirect, url_for,
+                   send_from_directory)
 from flask_login import LoginManager, current_user
 from flask_wtf.csrf import CSRFProtect
 
 from .models import db, User, SystemConfig
 
-# 加固版本标记（启动时打日志，便于确认线上跑的是哪一版）
-APP_BUILD = '2026-09-17-harden-2'
+# Web App Manifest 的正确 MIME（Python 的 mimetypes 默认不认识 .webmanifest，
+# 不注册的话 Flask 会当 octet-stream 发，浏览器直接拒收 manifest）
+mimetypes.add_type('application/manifest+json', '.webmanifest')
+
+# 版本标记（启动时打日志，便于确认线上跑的是哪一版）
+APP_BUILD = '2026-09-18-pwa-1'
 
 # 强制 HTTPS（2026-09-17 老爹定：公网一律 https，局域网内保留 http）
 #   判定“公网”= 请求经 Cloudflare 隧道进来（带 CF-Connecting-IP / X-Forwarded-Proto）。
@@ -119,6 +125,31 @@ def create_app(instance_dir=None):
     def healthz():
         return 'ok'
 
+    # ---------------- PWA：三个根路径入口 ----------------
+    # Service Worker 必须从根路径提供，作用域才能覆盖全站（放 /static/ 下只能管 /static/）
+    @app.route('/sw.js')
+    def service_worker():
+        resp = send_from_directory(app.static_folder, 'sw.js',
+                                   mimetype='application/javascript')
+        resp.headers['Cache-Control'] = 'no-cache'          # 每次都核对，保证能收到新版本
+        resp.headers['Service-Worker-Allowed'] = '/'
+        return resp
+
+    @app.route('/manifest.webmanifest')
+    def webmanifest():
+        resp = send_from_directory(app.static_folder, 'manifest.webmanifest',
+                                   mimetype='application/manifest+json')
+        resp.headers['Cache-Control'] = 'public, max-age=3600'
+        return resp
+
+    @app.route('/offline')
+    def offline_page():
+        """离线提示页（service worker 缓存它，断网时回退到这里）"""
+        resp = send_from_directory(app.static_folder, 'offline.html',
+                                   mimetype='text/html')
+        resp.headers['Cache-Control'] = 'public, max-age=86400'
+        return resp
+
     @app.errorhandler(404)
     def e404(e):
         return render_template('error.html', code=404, message='页面不存在',
@@ -196,7 +227,8 @@ def create_app(instance_dir=None):
         # 首次安装标记：无任何用户 → 跳 setup
         @app.before_request
         def _setup_gate():
-            if request.endpoint in ('auth.setup', 'auth.login', 'static', 'healthz'):
+            if request.endpoint in ('auth.setup', 'auth.login', 'static', 'healthz',
+                                    'service_worker', 'webmanifest', 'offline_page'):
                 return None
             if not User.query.first():
                 return redirect(url_for('auth.setup'))

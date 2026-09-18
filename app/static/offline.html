@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e12232">
+<meta name="robots" content="noindex">
+<title>网络未连接 · 课时本</title>
+<style>
+  :root { --red: #e12232; --bg: #f2f4f9; --text: #1f2733; --muted: #7a8494; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .box {
+    max-width: 420px; width: 100%; text-align: center; background: #fff;
+    border-radius: 18px; padding: 36px 26px; box-shadow: 0 6px 26px rgba(30, 45, 90, .08);
+  }
+  .ic { width: 96px; height: 96px; border-radius: 24px; margin: 0 auto 18px; display: block; }
+  h1 { font-size: 19px; margin: 0 0 8px; }
+  p { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+  button {
+    border: 0; border-radius: 12px; background: var(--red); color: #fff;
+    font-size: 15px; padding: 12px 30px; font-weight: 600; cursor: pointer;
+    font-family: inherit;
+  }
+  button:active { opacity: .85; }
+  .tip { margin-top: 18px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="box">
+    <img class="ic" src="/static/icons/icon-192.png" alt="课时本" onerror="this.style.display='none'">
+    <h1>网络好像断开了</h1>
+    <p>课时本需要联网才能读取最新的课时和报名数据。<br>请检查 Wi-Fi 或流量，然后重试。</p>
+    <button onclick="location.reload()">重新加载</button>
+    <div class="tip">网络恢复后会自动刷新</div>
+  </div>
+  <script>
+    // 网络一恢复就自动重试
+    window.addEventListener('online', function () { location.reload(); });
+    setTimeout(function () { if (navigator.onLine) location.reload(); }, 3000);
+  </script>
+</body>
+</html>

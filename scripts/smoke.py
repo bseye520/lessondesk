@@ -36,6 +36,18 @@ def csrf(html):
     return m.group(1) if m else None
 
 
+def req2(path, data=None):
+    """同 req，但连响应头一起返回：-> (status, headers, body)"""
+    url = BASE + path
+    body = urllib.parse.urlencode(data).encode() if data else None
+    r = urllib.request.Request(url, data=body)
+    try:
+        with opener.open(r, timeout=15) as resp:
+            return resp.status, {k: v for k, v in resp.headers.items()}, resp.read().decode('utf-8', 'ignore')
+    except urllib.error.HTTPError as e:
+        return e.code, {k: v for k, v in e.headers.items()}, e.read().decode('utf-8', 'ignore')
+
+
 def login_as(username, password):
     """先登出，再 GET login 拿 csrf 再 POST"""
     req('/logout')
@@ -224,6 +236,32 @@ def main():
     check('记支出 302', st == 302, f'st={st}')
     st, h = req('/finance')
     check('财务页含 150.50', '150.50' in h, f'st={st}')
+
+    # 10. PWA（可安装 / 离线 / 图标 / 类型正确的 manifest）
+    st, hd, body = req2('/manifest.webmanifest')
+    ct = hd.get('Content-Type', '')
+    check('PWA manifest 200', st == 200, f'st={st}')
+    check('manifest MIME 正确', 'manifest+json' in ct, ct)
+    check('manifest 内容完整', '"课时本"' in body and '"standalone"' in body and 'icon-512.png' in body)
+    st, hd, body = req2('/sw.js')
+    ct = hd.get('Content-Type', '')
+    check('Service Worker 200', st == 200, f'st={st}')
+    check('SW MIME 正确', 'javascript' in ct, ct)
+    check('SW 作用域=全站', hd.get('Service-Worker-Allowed') == '/', str(hd.get('Service-Worker-Allowed')))
+    check('SW 只缓存 /static/', "CACHEABLE_PREFIXES = ['/static/']" in body)
+    check('SW 不缓存敏感路径', "'/students'" in body and 'NEVER_CACHE_EXACT' in body and 'NEVER_CACHE_PREFIX' in body)
+    check('SW 导航 network-first', "req.mode === 'navigate'" in body)
+    st, hd, body = req2('/offline')
+    check('离线页(路由) 200', st == 200 and '网络好像断开了' in body, f'st={st}')
+    st, hd, body = req2('/static/offline.html')
+    check('离线页(静态) 200', st == 200 and '网络好像断开了' in body, f'st={st}')
+    for ic in ('icon-192.png', 'icon-512.png', 'icon-maskable-192.png',
+               'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon-32.png'):
+        st, hd, _ = req2('/static/icons/' + ic)
+        check('图标 ' + ic, st == 200, f'st={st}')
+    st, hd, _ = req2('/login')
+    cc = hd.get('Cache-Control', '')
+    check('登录页禁止缓存(no-store)', 'no-store' in cc, cc)
 
     print()
     print(f'==== 结果: {len(PASS)} 通过, {len(FAIL)} 失败 ====')
