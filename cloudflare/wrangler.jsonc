@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lesson-desk",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-11",
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "d1_databases": [{"binding": "DB", "database_name": "lesson-desk-db", "database_id": "REPLACE_WITH_D1_DATABASE_ID", "migrations_dir": "migrations"}],
+  "r2_buckets": [{"binding": "ARTWORKS", "bucket_name": "lesson-desk-artworks"}],
+  "vars": {"SITE_NAME": "课时本", "TZ": "Asia/Shanghai"},
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["0 3 * * *"] }
+}

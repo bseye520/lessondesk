@@ -1,0 +1,132 @@
+/* Cloudflare native adapter - structural only. V3 design-system.css is retained unmodified. */
+.ld-sidebar{position:fixed;inset:0 auto 0 0;width:218px;z-index:101;overflow:auto}.ld-main{margin-left:218px}.ld-topbar,.ld-mobile-nav{display:none}
+.ld-brand{display:flex;align-items:center;gap:12px;color:white}.ld-brand small{display:block}.ld-menu a{display:flex;align-items:center;gap:12px;text-decoration:none}.ld-foot{margin-top:25px}
+.roster-class{display:block}.roster-class summary{cursor:pointer;list-style:none}.roster-class summary::-webkit-details-marker,.roster-student summary::-webkit-details-marker{display:none}
+.roster-class .roster-class-body{display:none}.roster-class[open] .roster-class-body{display:block}
+.roster-one-tap form{margin:0}.ld-auth{max-width:440px;margin:12vh auto 0;padding:15px}.ld-auth .card-b{display:grid;gap:12px}
+.ld-auth button{width:100%}.ld-public{max-width:900px}.ld-section-gap{margin-top:22px}.ld-form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.ld-form-grid .form-label{margin-bottom:0}
+.ld-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ld-inline{display:inline-block}.ld-muted{color:#888;font-size:12px}
+.ld-photo-preview{width:100%;max-height:350px;object-fit:contain;border-radius:10px;display:none;background:#f8f6f1}
+.ld-toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);padding:12px 16px;background:#253037;color:#fff;border-radius:13px;z-index:3000;box-shadow:0 12px 32px #0003;max-width:min(95vw,500px)}.ld-toast button{margin-left:12px;background:#fff5eb;border:none;border-radius:6px;color:#923e30;padding:6px 9px}
+.ld-public-card img{height:auto;width:100%;aspect-ratio:1;object-fit:cover}.ld-public-header{box-shadow:0 2px 18px #0001}.ld-public-card{box-shadow:0 2px 12px #0001}
+.ld-detail-stats{display:flex;gap:8px;flex-wrap:wrap}.ld-detail-stats>*{flex:1;min-width:130px}.ld-link-break{word-break:break-all}
+@media(max-width:991.98px){.ld-sidebar{display:none}.ld-main{margin-left:0}.ld-topbar{display:flex;align-items:center;justify-content:space-between}.ld-mobile-nav{display:flex;justify-content:space-around}.ld-mobile-nav a{flex:1;display:grid;place-items:center;text-decoration:none}.ld-mobile-nav a i{font-size:17px}.ld-auth{margin-top:7vh}.ld-form-grid{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}}
+
+/* Cloudflare hotfix: keep quick attendance visible on each compact student row.
+   Original V3 style.css and design-system.css remain byte-for-byte unchanged. */
+.roster-student-line{display:flex;align-items:center;gap:6px;min-width:0;padding:1px 2px}
+.roster-student-details{flex:1 1 auto;min-width:0}
+.roster-student-line>.roster-inline-quick{flex:0 0 auto;margin:0}
+.roster-inline-quick .roster-quick-button{min-height:32px;min-width:66px;border-radius:8px;font-size:12px;padding:4px 9px;white-space:nowrap}
+.roster-student-details[open]>.roster-student-main{background:#fcf7f0}
+.roster-student-details[open] .roster-student-caret{transform:rotate(225deg)}
+.roster-expanded{padding:3px 0 8px 10px}
+.roster-expanded>.roster-camera-button{min-height:31px;margin:0 0 2px 8px}
+.roster-expanded .roster-branches{padding-top:5px;padding-bottom:6px}
+.roster-student-main{cursor:pointer;padding-right:2px}
+.roster-remaining{white-space:nowrap}
+.roster-quick-button:disabled{opacity:.67}
+@media(max-width:680px){
+ .roster-student-line{gap:3px}
+ .roster-student-main{gap:4px;padding:6px 3px;min-height:40px}
+ .roster-student-name{font-size:12px;flex:1 1 55px}
+ .roster-remaining{font-size:10.5px}
+ .roster-progress{flex:0 1 72px;min-width:34px;gap:3px}
+ .roster-fraction{font-size:9px;white-space:nowrap}
+ .roster-inline-quick .roster-quick-button{font-size:11.5px;min-height:34px;min-width:58px;padding:3px 6px}
+ .roster-student-caret{width:6px;height:6px}
+}
+@media(max-width:360px){.roster-fraction{display:none}.roster-progress{flex-basis:39px}}
+
+/* V5 additive branding and media. V3 style/design-system remains untouched. */
+.ld-menu-logo{width:30px;height:30px;border-radius:8px;object-fit:contain;margin-right:7px;vertical-align:middle}
+.ld-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:10px}
+.ld-avatar.lg{width:76px;height:76px;margin-right:0}
+.ld-avatar-header{display:flex;gap:14px;align-items:center;margin-bottom:20px;font-weight:650}
+.ld-avatar-fallback{width:76px;height:76px;display:grid;place-items:center;border-radius:50%;background:#f9f1ec;font-size:28px}
+.ld-brand-preview{max-width:240px;height:100px;object-fit:contain;display:block;margin:10px 0}
+.ld-brand-qr{width:135px;height:135px}
+.ld-public-studio{display:flex;gap:10px;align-items:center;justify-content:center;margin:0 auto 12px;color:#684a43;font-size:15px}
+.ld-public-logo{max-width:64px;max-height:64px;object-fit:contain;border-radius:10px}
+.ld-parent-footer{border:1px solid #eee0d4;border-radius:22px;padding:22px;margin:32px 0 24px;background:#fffaf6}
+.ld-parent-footer h2{font-size:20px;margin:0 0 10px}.ld-parent-slogan{font-size:15px;color:#94584f}
+.ld-parent-contact{display:flex;align-items:flex-start;gap:15px;justify-content:space-between;flex-wrap:wrap}
+.ld-parent-contact p{margin:6px 0;color:#766f69;font-size:14px}
+.ld-parent-qr{width:118px;height:118px;object-fit:contain;background:white;padding:5px;border:1px solid #e9ddd4;border-radius:8px}
+.ld-inline-error{padding:12px;border:1px solid #d4a9a1;background:#fff4ef;color:#8d332d;border-radius:12px;margin:10px 0}
+.ld-save-working{opacity:.65;pointer-events:none}
+
+/* V7: compact progressive-disclosure administrative UI, preserving V3 palette */
+.ld-collapse{border:1px solid #eadfd5;border-radius:18px;background:#fff;margin:10px 0;overflow:hidden}
+.ld-collapse>summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:15px 18px;color:#674a41;font-size:15px;list-style:none;min-height:49px}
+.ld-collapse>summary::-webkit-details-marker{display:none}
+.ld-collapse>summary::after{content:'⌄';margin-left:auto;color:#a46f5e}
+.ld-collapse[open]>summary::after{transform:rotate(180deg)}
+.ld-collapse>summary span{font-size:12px;color:#8c8581;font-weight:400}
+.ld-collapse>.card-ld{margin:0!important;border:0;box-shadow:none;border-top:1px solid #f0e8e3;border-radius:0}
+.ld-manage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+.ld-manage-card{display:flex;flex-direction:column;gap:7px;background:#fff;border:1px solid #eadfd5;border-radius:18px;padding:20px;color:#75433c;text-decoration:none}
+.ld-manage-card:hover{border-color:#c98777;background:#fffaf5;color:#ab3340}
+.ld-manage-card small{font-size:12px;color:#807c7b}
+.ld-nav-extra{font-size:11px;color:#a79e96;padding:19px 15px 5px}
+.ld-chart{display:flex;align-items:end;gap:8px;overflow-x:auto;padding:10px 2px 0;min-height:160px}
+.ld-chart-item{flex:1;min-width:40px;max-width:90px;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:6px;font-size:12px;text-align:center}
+.ld-chart-value{font-size:11px;color:#7f756e;white-space:nowrap}
+.ld-chart-item small{font-size:11px;color:#857d79;white-space:nowrap}
+.ld-chart-column{display:flex;align-items:end;width:66%;min-height:108px;height:108px}
+.ld-chart-column>span{display:block;width:100%;background:#cf8b6d;border-radius:6px 6px 2px 2px}
+.ld-chart-pair{display:flex;align-items:end;justify-content:center;gap:3px;width:100%;min-height:110px;height:110px}
+.ld-chart-pair span{width:35%;border-radius:4px 4px 0 0}
+.ld-chart-pair .income,.ld-chart-dot.income{background:#b34a50}
+.ld-chart-pair .expense,.ld-chart-dot.expense{background:#dab59a}
+.ld-chart-legend{display:flex;align-items:center;gap:6px;font-size:12px;color:#756f6b}
+.ld-chart-dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-left:10px}
+.ld-pie-layout{display:flex;flex-wrap:wrap;align-items:center;gap:24px}
+.ld-donut{width:150px;height:150px;flex-shrink:0;border-radius:50%;position:relative}
+.ld-donut::after{content:'';position:absolute;inset:27%;border-radius:50%;background:white}
+.ld-pie-legend{flex:1;min-width:160px;display:grid;gap:8px}
+.ld-pie-legend div{display:flex;gap:8px;align-items:center;font-size:12px;color:#68625e}
+.ld-pie-legend span{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.ld-pie-legend b{margin-left:auto;color:#343333}
+@media(max-width:420px){.ld-collapse>summary{padding:13px 14px}.ld-chart{gap:4px}.ld-chart-item{min-width:35px}.ld-chart-value{font-size:10px}}
+
+/* V7 upload improvements: separate camera/gallery, visible progress, V3 palette unchanged. */
+.ld-art-pickers{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ld-art-picker{display:inline-flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:48px;padding:10px 18px;border:1px solid #dfb8a4;border-radius:12px;background:#fff7f2;color:#914837;font-weight:600;cursor:pointer;flex:1 1 145px}
+.ld-art-picker:focus-within{outline:2px solid #ae3440;outline-offset:2px}
+.ld-art-picker input[type=file]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:100px}
+.ld-upload-progress{margin:12px 0 16px}
+.ld-upload-progress progress{display:block;width:100%;height:12px;accent-color:#ae3440}
+.ld-upload-progress p{margin:7px 0 0;overflow-wrap:anywhere}
+#art-selected{min-height:24px;overflow-wrap:anywhere}
+#art-submit:disabled{opacity:.5}
+
+/* Give the bottom fixed navigation enough room on short mobile screens. */
+#art-form{padding-bottom:10px}
+
+/* Artwork upload: one primary action at a time, no overflowing inline links. */
+#art-form .ld-upload-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:15px}
+#art-form .ld-upload-actions>.btn{white-space:nowrap;text-decoration:none}
+#art-form .ld-upload-actions>[hidden]{display:none!important}
+#art-form .ld-upload-back{color:#77716d;font-size:14px;padding:8px 2px;text-decoration:none}
+#art-form .ld-upload-inputs[hidden],#art-form [hidden]{display:none!important}
+#art-form[data-state="complete"] .ld-upload-inputs,#art-form[data-state="uncertain"] .ld-upload-inputs{display:none!important}
+#art-form[data-state="complete"] #art-submit,#art-form[data-state="uncertain"] #art-submit{display:none!important}
+#art-form .ld-photo-preview{display:block;max-height:240px;width:auto;max-width:100%;margin:8px auto 14px;border-radius:12px;object-fit:contain}
+#art-form .ld-upload-note{margin:10px 0 12px}
+#art-form .ld-upload-note summary{font-size:14px;color:#706d69;padding:9px 0;cursor:pointer}
+#art-form .ld-upload-help{font-size:12px;line-height:1.5}
+@media(max-width:430px){#art-form .ld-upload-actions{gap:8px}#art-form #art-submit{flex:1 0 100%;min-height:46px}#art-form[data-state="complete"] #art-view{flex:1 1 auto}#art-form .ld-art-picker{padding:12px 6px;font-size:14px}}
+
+@media(max-width:430px){
+ #art-form[data-state="complete"] #art-view,#art-form[data-state="complete"] #art-again{flex:1 1 calc(50% - 7px);text-align:center;padding-left:5px;padding-right:5px;font-size:14px}
+ #art-form .ld-upload-back{flex:0 0 100%;text-align:center;margin-top:2px}
+}
+
+/* V7.0.3: Artwork description has one control, no nested card borders. */
+#art-form .ld-upload-description{border:0!important;box-shadow:none!important;background:transparent;margin:8px 0 12px;padding:0;overflow:visible}
+#art-form .ld-upload-description>summary{font-size:14px;line-height:1.5;color:#756d66;padding:8px 0;list-style:none;cursor:pointer}
+#art-form .ld-upload-description>summary::-webkit-details-marker{display:none}
+#art-form .ld-upload-description>summary::after{content:'⌄';display:inline-block;margin-left:8px;color:#b77b68}
+#art-form .ld-upload-description[open]>summary::after{transform:rotate(180deg)}
+#art-form .ld-upload-description>textarea{display:block;width:100%;box-sizing:border-box;margin:3px 0 0;min-height:75px;border:1px solid #ddd8d2;border-radius:12px;padding:12px;font-size:15px;resize:vertical}
