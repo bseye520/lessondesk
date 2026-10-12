@@ -8,7 +8,7 @@ stop(){ echo "[STOP] $*" >&2; exit 2; }
 for v in EXPECTED_WORKER_NAME EXPECTED_D1_ID EXPECTED_R2_BUCKET EXPECTED_SITE_URL; do
   [ -n "${!v:-}" ] || stop "Missing environment variable: $v"
 done
-[ "${EXPECTED_SITE_URL#https://}" != "$EXPECTED_SITE_URL" ] || stop 'EXPECTED_SITE_URL must start with https://'
+[ "$EXPECTED_SITE_URL" = 'https://example.com' ] || stop 'Unexpected production hostname'
 python3 - <<'PYCHK'
 import os,json
 c=json.load(open('wrangler.jsonc'))
