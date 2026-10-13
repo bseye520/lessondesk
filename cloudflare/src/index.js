@@ -41,15 +41,15 @@ function expensePie(rows){
 }
 async function dashboard(env,u,url){
  const campus=reqCampus(u,url),groups=await getGroups(env,u,campus),ids=groups.map(g=>g.id);
- const [students,spent,done,recent,pending]=await Promise.all([
+ const [students,spent,done,recent,pending,daily]=await Promise.all([
   getStudentsForGroups(env,groups),
   ids.length?all(env.DB,`SELECT class_group_id,student_id,SUM(deducted_lessons) AS used FROM lesson_record WHERE revoked_at IS NULL AND class_group_id IN (${ids.map(()=>'?').join(',')}) GROUP BY class_group_id,student_id`,...ids):Promise.resolve([]),
   ids.length?all(env.DB,`SELECT class_group_id,student_id FROM quick_deduct WHERE local_day=? AND class_group_id IN (${ids.map(()=>'?').join(',')})`,today(env.TZ),...ids):Promise.resolve([]),
   recentRecord(env,u,15),
-  u.role==='teacher'?Promise.resolve({n:0}):one(env.DB,`SELECT COUNT(*) AS n FROM registration WHERE status='pending' ${u.role==='super_admin'?'':'AND campus_id=?'}`,...(u.role==='super_admin'?[]:[u.campus_id]))
+  u.role==='teacher'?Promise.resolve({n:0}):one(env.DB,`SELECT COUNT(*) AS n FROM registration WHERE status='pending' ${u.role==='super_admin'?'':'AND campus_id=?'}`,...(u.role==='super_admin'?[]:[u.campus_id])),
+  u.role==='teacher'?Promise.resolve([]):all(env.DB,`SELECT lesson_date AS label,SUM(deducted_lessons) AS value FROM lesson_record WHERE revoked_at IS NULL AND lesson_date>=? ${u.role==='super_admin'?'':'AND campus_id=?'} GROUP BY lesson_date ORDER BY lesson_date`,new Intl.DateTimeFormat('sv-SE',{timeZone:env.TZ||'Asia/Shanghai'}).format(new Date(Date.now()-6*86400000)),...(u.role==='super_admin'?[]:[u.campus_id]))
  ]);
  const headline=u.role==='teacher'?'我的课':'教务概览';const enrollmentCount=new Set(students.map(s=>s.id)).size;
- const daily=u.role==='teacher'?[]:await all(env.DB,`SELECT lesson_date AS label,SUM(deducted_lessons) AS value FROM lesson_record WHERE revoked_at IS NULL AND lesson_date>=? ${u.role==='super_admin'?'':'AND campus_id=?'} GROUP BY lesson_date ORDER BY lesson_date`,new Intl.DateTimeFormat('sv-SE',{timeZone:env.TZ||'Asia/Shanghai'}).format(new Date(Date.now()-6*86400000)),...(u.role==='super_admin'?[]:[u.campus_id]));
  const todaySum=u.role==='teacher'?0:daily.filter(x=>x.label===today(env.TZ)).reduce((n,x)=>n+Number(x.value),0);
  let content=section(headline,`${weekday(env.TZ)} · ${today(env.TZ)} · 展开班级后直接点右侧消课；点姓名查看其他操作`);
  content+=u.role!=='teacher'?statGrid([['在班学员',enrollmentCount],['当前班级',groups.length],['今日有效消课',todaySum],['待办报名',pending?.n||0]]):'';
@@ -58,9 +58,12 @@ async function dashboard(env,u,url){
  content+=`<details class="ld-collapse"><summary>最近消课记录 · ${recent.length} 条</summary>`+card('操作记录',table(['日期','班级','学员','课时','操作'],recent.map(r=>[e(r.display_date||''),e(r.group_name),e(r.student_name),r.revoked_at?'<span class="st-badge">已撤销</span>':`- ${r.deducted_lessons}`,r.quick_id&&!r.revoked_at&&(isManager(u)||r.operator_id===u.id)?form(`/api/undo/${r.id}`,u,(isManager(u)?'<input name="reason" class="form-control form-control-sm" maxlength="200" placeholder="撤销原因" required>':'')+'<button class="btn btn-sm btn-outline-secondary">撤销</button>'):'—'])))+`</details>`;
  return ui(env,u,headline,content,'/');}
 async function studentsList(env,u,url){const campus=reqCampus(u,url),kw=(url.searchParams.get('q')||'').slice(0,50),status=url.searchParams.get('status')||'active';let args=[],where=' WHERE 1=1 ';if(campus){where+=' AND s.campus_id=?';args.push(campus);}if(status!=='all'){where+=' AND s.status != ?';args.push('archived');}if(kw){where+=' AND (s.name LIKE ? OR s.phone LIKE ? OR s.parent_name LIKE ?)';args.push(...Array(3).fill(`%${kw}%`));}if(u.role==='teacher'){where+=' AND EXISTS (SELECT 1 FROM enrollment e JOIN class_group g ON g.id=e.class_group_id WHERE e.student_id=s.id AND e.status=\'active\' AND g.teacher_id=? AND g.is_archived=0)';args.push(u.id)}
+ const _isM=isManager(u);
+ const _pCampuses=_isM?all(env.DB,'SELECT * FROM campus WHERE is_active=1 ORDER BY id'):Promise.resolve([]);
+ const _pGroups=_isM?getGroups(env,u,campus):Promise.resolve([]);
  const students=await all(env.DB,`SELECT s.*,c.name AS campus_name FROM student s JOIN campus c ON c.id=s.campus_id ${where} ORDER BY s.status,s.name LIMIT 300`,...args);
  let c=section('学员管理','姓名、家长、余额及作品档案');c+=`<form method="get" class="ld-actions mb-3"><input class="form-control" style="max-width:280px" name="q" placeholder="搜索姓名或手机号" value="${a(kw)}"><button class="btn btn-soft">搜索</button><a class="btn btn-outline-secondary" href="/students?status=${status==='all'?'active':'all'}">${status==='all'?'只看在册':'含归档'}</a></form>`;
- if(isManager(u)){const campuses=await all(env.DB,'SELECT * FROM campus WHERE is_active=1 ORDER BY id');const choices=campuses.filter(c=>u.role==='super_admin'||c.id===u.campus_id);const gs=await getGroups(env,u,campus);
+ if(_isM){const [campuses,gs]=await Promise.all([_pCampuses,_pGroups]);const choices=campuses.filter(c=>u.role==='super_admin'||c.id===u.campus_id);
  c+=card('新建学员',form('/api/students',u,`<div class="ld-form-grid">${select('campus_id','校区',choices.map(x=>[x.id,x.name]),u.campus_id||choices[0]?.id)}${input('name','学员姓名','','text',true)}${input('phone','家长电话（可重复）')}${input('parent_name','家长姓名')}${input('grade','年级')}${select('class_group_id','加入班级（可不选）',[['','暂不入班'],...gs.map(g=>[g.id,g.name])])}</div><div class="mt-2">${btn('创建学员')}</div>`));}
  c+=`<div class="row g-3">${students.map(s=>`<div class="col-12 col-sm-6 col-xl-4"><div class="card-ld h-100"><div class="card-b"><div class="ld-actions justify-content-between"><b>${e(s.name)}</b><span class="st-badge">${capname(s.status)}</span></div><div class="ld-muted">${e(s.grade||s.campus_name)}${isManager(u)?' · '+e(s.phone):''}</div><p class="mt-2">剩余课时 <b style="font-size:24px;color:#ae3440">${s.lessons_remaining}</b> 节</p><a class="btn btn-soft btn-sm" href="/students/${s.id}">查看档案 / 作品 →</a></div></div></div>`).join('')||'<p class="ld-muted">暂无匹配学员</p>'}</div>`;
  return ui(env,u,'学员管理',c,'/students');}
@@ -120,10 +123,14 @@ async function uploadPage(env,u,id){
 }
 async function classesPage(env,u,url){
  manager(u);
- const campus=reqCampus(u,url),schools=(await all(env.DB,'SELECT * FROM campus WHERE is_active=1')).filter(c=>u.role==='super_admin'||c.id===u.campus_id);
- const teachers=await all(env.DB,"SELECT * FROM user WHERE role='teacher'");
- const courses=await all(env.DB,'SELECT * FROM course');
- const gs=await all(env.DB,`SELECT g.*,c.name AS course_name,t.username AS teacher_name FROM class_group g LEFT JOIN course c ON c.id=g.course_id LEFT JOIN user t ON t.id=g.teacher_id WHERE ${campus?'g.campus_id=?':'1=1'} ORDER BY g.is_archived,g.weekday,g.name`,...(campus?[campus]:[]));
+ const campus=reqCampus(u,url);
+ const [schoolsRaw,teachers,courses,gs]=await Promise.all([
+  all(env.DB,'SELECT * FROM campus WHERE is_active=1'),
+  all(env.DB,"SELECT * FROM user WHERE role='teacher'"),
+  all(env.DB,'SELECT * FROM course'),
+  all(env.DB,`SELECT g.*,c.name AS course_name,t.username AS teacher_name FROM class_group g LEFT JOIN course c ON c.id=g.course_id LEFT JOIN user t ON t.id=g.teacher_id WHERE ${campus?'g.campus_id=?':'1=1'} ORDER BY g.is_archived,g.weekday,g.name`,...(campus?[campus]:[]))
+ ]);
+ const schools=schoolsRaw.filter(c=>u.role==='super_admin'||c.id===u.campus_id);
  let h=section('班级管理','班级设置与历史记录独立。归档后停止消课，仍可恢复使用。');
  h+=`<details class="ld-collapse"><summary>＋ 创建新班级</summary>`+card('创建班级',form('/api/classes',u,`<div class="ld-form-grid">${select('campus_id','校区',schools.map(c=>[c.id,c.name]),u.campus_id||schools[0]?.id)}${input('name','班级名称','','text',true)}${select('course_id','课程',courses.filter(c=>!c.is_archived&&schools.some(s=>s.id===c.campus_id)).map(c=>[c.id,c.name,c.campus_id]))}${select('teacher_id','教师',[['','暂未指定'],...teachers.filter(t=>t.is_active&&schools.some(s=>s.id===t.campus_id)).map(t=>[t.id,t.username,t.campus_id])])}${select('weekday','每周',[...'一二三四五六日'].map(w=>['周'+w,'周'+w]))}${input('start_time','开始','09:00','time',true)}${input('end_time','结束','10:30','time',true)}${input('room','教室')}${input('capacity','班级容量（0=不限）','0','number')}${input('deduct_lessons','每次消课','1','number')}</div><div class="mt-2">${btn('创建班级')}</div>`))+`</details>`;
  for(const g of gs){
